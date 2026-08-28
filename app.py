@@ -5,6 +5,10 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
+@app.route("/")
+def index():
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+
 # ============================================================
 # OPENAI
 # ============================================================
