@@ -27,7 +27,7 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
 MODEL = os.environ.get(
     "OPENAI_MODEL",
-    "gpt-4o-mini"
+    "openrouter/free"
 )
 
 
@@ -202,13 +202,26 @@ def ask_ai(
     messages,
     temperature=0.85
 ):
+    if not API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is missing from the server environment.")
+
+    print(f"AI REQUEST: model={MODEL}, messages={len(messages)}", flush=True)
+
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
-        temperature=temperature
+        temperature=temperature,
+        max_tokens=900
     )
 
-    return response.choices[0].message.content.strip()
+    if not response.choices:
+        raise RuntimeError("OpenRouter returned no choices.")
+
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("OpenRouter returned an empty response.")
+
+    return content.strip()
 
 
 # ============================================================
@@ -440,8 +453,14 @@ def chat():
 
     except Exception as error:
 
+        import traceback
+        print("AI ERROR:", repr(error), flush=True)
+        traceback.print_exc()
+
         return jsonify({
-            "error": str(error)
+            "error": str(error),
+            "response": "I couldn't connect to the AI right now.",
+            "reply": "I couldn't connect to the AI right now."
         }), 500
 
     add_conversation_message(
