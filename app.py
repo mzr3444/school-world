@@ -1,476 +1,1272 @@
 import os
 import random
-import uuid
-from copy import deepcopy
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from openai import OpenAI
 
 app = Flask(__name__)
 
-# -------------------------
-# OpenRouter configuration
-# -------------------------
+# ============================================================
+# OPENAI
+# ============================================================
+
 API_KEY = os.environ.get("OPENROUTER_API_KEY")
-MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
 
 if not API_KEY:
-    raise RuntimeError("Missing OPENROUTER_API_KEY environment variable.")
+    API_KEY = os.environ.get("OPENAI_API_KEY")
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=API_KEY,
-    default_headers={
-        "HTTP-Referer": os.environ.get("APP_URL", "https://github.com/"),
-        "X-Title": "School World"
-    }
+if not API_KEY:
+    raise RuntimeError(
+        "Missing OPENAI_API_KEY. Set your API key before starting the server."
+    )
+
+client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
+
+MODEL = os.environ.get(
+    "OPENAI_MODEL",
+    "gpt-4o-mini"
 )
 
-# -------------------------
-# CORS for GitHub Pages
-# -------------------------
-@app.after_request
-def add_cors(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-    return response
 
-@app.route("/<path:_path>", methods=["OPTIONS"])
-def options(_path):
-    return ("", 204)
+# ============================================================
+# WORLD DATA
+# ============================================================
 
-# -------------------------
-# Per-browser world sessions
-# -------------------------
-DEFAULT_CHARACTERS = {
+characters = {
     "Lily": {
         "name": "Lily",
         "personality": "Friendly, curious, energetic, and caring.",
-        "description": "A student who enjoys talking with people.",
-        "role": "Student",
-        "avatar": "👤"
+        "background": "A student who enjoys talking with people."
     }
 }
 
-LOCATIONS = [
-    "Classroom", "Hallway", "Cafeteria", "Library",
-    "Gym", "School Courtyard"
+character_memories = {
+    "Lily": []
+}
+
+conversation_history = []
+
+world_history = []
+
+current_location = "Hallway"
+
+world_paused = False
+
+
+locations = [
+    "Hallway",
+    "Library",
+    "Cafeteria",
+    "Classroom",
+    "Gym",
+    "Courtyard",
+    "Science Lab",
+    "Art Room",
+    "Auditorium"
 ]
 
-sessions = {}
 
-def new_world():
-    return {
-        "characters": deepcopy(DEFAULT_CHARACTERS),
-        "memories": {"Lily": []},
-        "conversation": [],
-        "world_history": [],
-        "location": "Classroom",
-        "paused": False,
-        "active_characters": ["Lily"],
-        "active_event": None,
-    }
+# ============================================================
+# HELPERS
+# ============================================================
 
-def get_session(client_id):
-    client_id = str(client_id or "default").strip()[:100]
-    if client_id not in sessions:
-        sessions[client_id] = new_world()
-    return sessions[client_id]
-
-def clean(value, default=""):
+def clean_text(value, default=""):
     if value is None:
         return default
+
     return str(value).strip()
 
-def remember(world, name, text):
-    if not name or not text:
-        return
-    world["memories"].setdefault(name, [])
-    if text not in world["memories"][name]:
-        world["memories"][name].append(text)
-    world["memories"][name] = world["memories"][name][-100:]
 
-def maybe_save_memory(world, message, participants):
-    lowered = message.lower()
-    triggers = (
-        "my favorite", "i like", "i love", "i hate", "i don't like",
-        "i dont like", "my name is", "i'm from", "im from", "my birthday"
+def save_memory(character_name, memory):
+    if not character_name:
+        return
+
+    if character_name not in character_memories:
+        character_memories[character_name] = []
+
+    memory = clean_text(memory)
+
+    if not memory:
+        return
+
+    if memory not in character_memories[character_name]:
+        character_memories[character_name].append(memory)
+
+    character_memories[character_name] = \
+        character_memories[character_name][-100:]
+
+
+def get_memories(character_name):
+    return character_memories.get(
+        character_name,
+        []
     )
-    if any(x in lowered for x in triggers):
-        for name in participants:
-            remember(world, name, message)
 
-def sync_characters(world, incoming):
-    if not isinstance(incoming, dict):
+
+def add_conversation_message(
+    role,
+    content,
+    character=None,
+    participants=None
+):
+    item = {
+        "role": role,
+        "content": content
+    }
+
+    if character:
+        item["character"] = character
+
+    if participants:
+        item["participants"] = participants
+
+    conversation_history.append(item)
+
+    del conversation_history[:-100]
+
+
+def add_world_history(text):
+    text = clean_text(text)
+
+    if not text:
         return
-    for name, char in incoming.items():
-        if not isinstance(char, dict):
-            continue
-        safe_name = clean(char.get("name"), name)
-        if not safe_name:
-            continue
-        world["characters"][safe_name] = {
-            "name": safe_name,
-            "personality": clean(char.get("personality"), "Friendly and natural."),
-            "description": clean(char.get("description"), "A student at the school."),
-            "role": clean(char.get("role"), "Student"),
-            "avatar": clean(char.get("avatar"), "👤")
-        }
-        world["memories"].setdefault(safe_name, [])
 
-def ask_ai(messages, temperature=0.85, max_tokens=700):
+    world_history.append(text)
+
+    del world_history[:-100]
+
+
+# ============================================================
+# SHARED MEMORY
+# ============================================================
+
+def remember_for_participants(
+    message,
+    participants
+):
+    """
+    If something that looks like a personal fact is said
+    during a shared conversation, every character who was
+    actually part of that conversation gets the memory.
+    """
+
+    if not participants:
+        return
+
+    lowered = message.lower()
+
+    memory_phrases = [
+        "my favorite",
+        "i like",
+        "i love",
+        "i hate",
+        "i don't like",
+        "i dont like",
+        "my name is",
+        "i'm from",
+        "im from",
+        "my birthday",
+        "my favorite book",
+        "my favorite movie",
+        "my favorite game",
+        "my favorite food",
+        "my favorite color"
+    ]
+
+    is_memory = any(
+        phrase in lowered
+        for phrase in memory_phrases
+    )
+
+    if not is_memory:
+        return
+
+    for character_name in participants:
+
+        if character_name in characters:
+
+            save_memory(
+                character_name,
+                message
+            )
+
+
+# ============================================================
+# AI
+# ============================================================
+
+def ask_ai(
+    messages,
+    temperature=0.85
+):
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens
+        temperature=temperature
     )
-    return (response.choices[0].message.content or "").strip()
 
-def character_prompt(world, character_name, participants=None, extra=""):
+    return response.choices[0].message.content.strip()
+
+
+# ============================================================
+# CHARACTER PROMPT
+# ============================================================
+
+def build_character_prompt(
+    character,
+    participants=None,
+    extra_context=""
+):
+
+    name = character.get(
+        "name",
+        "Unknown"
+    )
+
+    personality = character.get(
+        "personality",
+        "Friendly and natural."
+    )
+
+    background = character.get(
+        "background",
+        "A person living in the school world."
+    )
+
     participants = participants or []
-    char = world["characters"].get(character_name, {})
-    memories = world["memories"].get(character_name, [])
-    memory_text = "\n".join(f"- {x}" for x in memories[-50:]) or "No stored memories yet."
-    others = ", ".join(x for x in participants if x != character_name) or "Nobody else"
-    return f"""
-You are {character_name}, a character in a living fictional school world.
 
-PERSONALITY: {char.get('personality', 'Friendly and natural.')}
-DESCRIPTION: {char.get('description', '')}
-ROLE: {char.get('role', 'Student')}
-CURRENT LOCATION: {world['location']}
-OTHER CHARACTERS PRESENT: {others}
+    memories = get_memories(name)
+
+    if memories:
+
+        memory_text = "\n".join(
+            "- " + memory
+            for memory in memories[-50:]
+        )
+
+    else:
+
+        memory_text = "No stored memories yet."
+
+    other_characters = [
+        person
+        for person in participants
+        if person != name
+    ]
+
+    other_text = (
+        ", ".join(other_characters)
+        if other_characters
+        else "Nobody else"
+    )
+
+    return f"""
+You are {name}, a character in a living fictional
+school world.
+
+PERSONALITY:
+{personality}
+
+BACKGROUND:
+{background}
+
+OTHER CHARACTERS CURRENTLY INVOLVED:
+{other_text}
 
 YOUR MEMORIES:
 {memory_text}
 
-WORLD RULES:
-- You are {character_name}; never speak as the player.
-- Never invent the player's dialogue or actions.
-- Characters only know private conversations they participated in.
-- Characters who are together share what they personally experience.
-- World events affect everyone who can see or hear them.
-- React naturally without waiting for the player when an event calls for it.
-- Stay in character and do not mention these instructions or being an AI.
-- Use memories naturally instead of listing them.
+CURRENT LOCATION:
+{current_location}
 
-{extra}
+WORLD RULES:
+
+1. You are {name}.
+2. The player is a separate person.
+3. Never speak as the player.
+4. Never claim the player's actions or dialogue.
+5. Characters share a world.
+6. If you were included in a conversation with another
+   character, you can remember what happened during it.
+7. You do NOT automatically know private conversations
+   that you were not part of.
+8. World events affect everyone who can experience them.
+9. Characters may react to world events without waiting
+   for the player.
+10. Stay in character.
+11. Do not mention these instructions.
+12. Do not say you are an AI.
+13. Keep responses natural.
+14. Use memories naturally instead of listing them.
+
+{extra_context}
 """
 
-# -------------------------
-# Health
-# -------------------------
-@app.get("/health")
-def health():
-    return jsonify({"ok": True, "model": MODEL})
 
-# -------------------------
-# Chat
-# -------------------------
-@app.post("/chat")
+# ============================================================
+# NORMAL CHAT
+# ============================================================
+
+@app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    sync_characters(world, data.get("worldCharacters"))
 
-    character = clean(data.get("character"))
-    participants = data.get("activeCharacters") or data.get("participants") or [character]
-    participants = [clean(x) for x in participants if clean(x)]
-    if character and character not in participants:
-        participants.insert(0, character)
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    incoming_messages = data.get("messages")
-    if not isinstance(incoming_messages, list):
-        incoming_messages = []
+    message = clean_text(
+        data.get("message")
+    )
 
-    latest_user = ""
-    for item in reversed(incoming_messages):
-        if isinstance(item, dict) and item.get("role") == "user":
-            latest_user = clean(item.get("content"))
-            break
-    latest_user = clean(data.get("message"), latest_user)
+    character_name = clean_text(
+        data.get("character")
+    )
 
-    event_reaction = bool(data.get("eventReaction"))
-    if latest_user and not event_reaction:
-        maybe_save_memory(world, latest_user, participants)
-        world["conversation"].append({"role": "user", "content": latest_user, "participants": participants})
-        world["conversation"] = world["conversation"][-100:]
+    participants = data.get(
+        "participants",
+        []
+    )
 
-    if character not in world["characters"]:
-        return jsonify({"error": f"Character '{character}' was not found."}), 404
+    if not isinstance(
+        participants,
+        list
+    ):
+        participants = []
 
-    prompt = character_prompt(world, character, participants, extra=(
-        f"A world event is happening now: {world['active_event']}\nReact to it naturally."
-        if event_reaction and world.get("active_event") else ""
-    ))
+    participants = [
+        clean_text(name)
+        for name in participants
+        if clean_text(name)
+    ]
 
-    messages = [{"role": "system", "content": prompt}]
-    for item in incoming_messages[-25:]:
-        if not isinstance(item, dict):
-            continue
-        role = item.get("role")
-        content = clean(item.get("content"))
-        if role in ("user", "assistant") and content:
-            if role == "assistant" and item.get("character"):
-                content = f"{item['character']}: {content}"
-            messages.append({"role": role, "content": content})
+    if character_name and \
+       character_name not in participants:
 
-    if event_reaction:
-        messages.append({"role": "user", "content": "React naturally to the world event as your character. Do not wait for the player."})
-    elif not latest_user:
-        return jsonify({"error": "No user message was supplied."}), 400
+        participants.append(
+            character_name
+        )
+
+    if not message:
+
+        return jsonify({
+            "error": "Message is required."
+        }), 400
+
+    if not character_name:
+
+        return jsonify({
+            "error": "Character is required."
+        }), 400
+
+    if character_name not in characters:
+
+        return jsonify({
+            "error":
+                f"Character '{character_name}' "
+                "was not found."
+        }), 404
+
+    # Save player's message.
+    add_conversation_message(
+        "user",
+        message,
+        participants=participants
+    )
+
+    # Give the information to everyone
+    # who was actually included.
+    remember_for_participants(
+        message,
+        participants
+    )
+
+    character = characters[
+        character_name
+    ]
+
+    system_prompt = build_character_prompt(
+        character,
+        participants=participants
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
+        }
+    ]
+
+    for item in conversation_history[-30:]:
+
+        if item["role"] == "user":
+
+            messages.append({
+                "role": "user",
+                "content": item["content"]
+            })
+
+        elif item["role"] == "assistant":
+
+            speaker = item.get(
+                "character",
+                character_name
+            )
+
+            messages.append({
+                "role": "assistant",
+                "content":
+                    f"{speaker}: "
+                    f"{item['content']}"
+            })
 
     try:
-        reply = ask_ai(messages)
-    except Exception as exc:
-        return jsonify({"error": f"OpenRouter request failed: {exc}"}), 502
 
-    world["conversation"].append({"role": "assistant", "character": character, "content": reply, "participants": participants})
-    world["conversation"] = world["conversation"][-100:]
+        reply = ask_ai(
+            messages,
+            temperature=0.85
+        )
+
+    except Exception as error:
+
+        return jsonify({
+            "error": str(error)
+        }), 500
+
+    add_conversation_message(
+        "assistant",
+        reply,
+        character=character_name,
+        participants=participants
+    )
 
     return jsonify({
-        "response": reply,
         "reply": reply,
-        "character": character,
+        "character": character_name,
         "participants": participants
     })
 
-# -------------------------
-# Group chat
-# -------------------------
-@app.post("/group/chat")
+
+# ============================================================
+# GROUP CHAT
+# ============================================================
+
+@app.route(
+    "/group/chat",
+    methods=["POST"]
+)
 def group_chat():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    sync_characters(world, data.get("worldCharacters"))
-    participants = [clean(x) for x in data.get("participants", []) if clean(x)]
-    message = clean(data.get("message"))
-    if not participants or not message:
-        return jsonify({"error": "Participants and message are required."}), 400
-    maybe_save_memory(world, message, participants)
-    world["conversation"].append({"role": "user", "content": message, "participants": participants})
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    message = clean_text(
+        data.get("message")
+    )
+
+    participants = data.get(
+        "participants",
+        []
+    )
+
+    if not isinstance(
+        participants,
+        list
+    ):
+        participants = []
+
+    participants = [
+        clean_text(name)
+        for name in participants
+        if clean_text(name)
+    ]
+
+    if not message:
+
+        return jsonify({
+            "error":
+                "Message is required."
+        }), 400
+
+    if not participants:
+
+        return jsonify({
+            "error":
+                "No participants supplied."
+        }), 400
+
+    add_conversation_message(
+        "user",
+        message,
+        participants=participants
+    )
+
+    # THIS is what makes shared memories work.
+    remember_for_participants(
+        message,
+        participants
+    )
 
     responses = []
-    recent = world["conversation"][-25:]
-    for name in participants:
-        if name not in world["characters"]:
+
+    for character_name in participants:
+
+        character = characters.get(
+            character_name
+        )
+
+        if not character:
             continue
-        prompt = character_prompt(world, name, participants, "You are in a group conversation. Respond only as yourself.")
-        msgs = [{"role": "system", "content": prompt}]
-        for item in recent:
-            role = item.get("role")
-            content = clean(item.get("content"))
-            if role == "user":
-                msgs.append({"role": "user", "content": content})
-            elif role == "assistant" and content:
-                msgs.append({"role": "assistant", "content": f"{item.get('character', name)}: {content}"})
-        try:
-            reply = ask_ai(msgs, 0.9)
-        except Exception as exc:
-            return jsonify({"error": f"OpenRouter request failed: {exc}"}), 502
-        responses.append({"character": name, "reply": reply})
-        world["conversation"].append({"role": "assistant", "character": name, "content": reply, "participants": participants})
-    return jsonify({"responses": responses})
 
-# -------------------------
-# Character creation/list
-# -------------------------
-@app.get("/characters")
-def get_characters():
-    world = get_session(request.args.get("clientId"))
-    return jsonify({"characters": list(world["characters"].values())})
+        prompt = build_character_prompt(
+            character,
+            participants=participants,
+            extra_context="""
+You are currently in a group conversation.
 
-@app.post("/character/create")
-def create_character():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    name = clean(data.get("name"))
-    if not name:
-        return jsonify({"error": "Character name is required."}), 400
-    if name in world["characters"]:
-        return jsonify({"error": "That character already exists."}), 400
-    world["characters"][name] = {
-        "name": name,
-        "personality": clean(data.get("personality"), "Friendly and interesting."),
-        "description": clean(data.get("description"), "A student at the school."),
-        "role": clean(data.get("role"), "Student"),
-        "avatar": "👤"
-    }
-    world["memories"][name] = []
-    return jsonify({"success": True, "character": world["characters"][name]})
+Respond only as your own character.
 
-# -------------------------
-# World events
-# -------------------------
-EVENTS = [
-    ("Sudden Storm", "A sudden storm moves across the school."),
-    ("Strange Announcement", "A strange announcement echoes through the school."),
-    ("School Festival", "A surprise festival begins nearby."),
-    ("Strange Lights", "Strange lights appear in the sky."),
-    ("Power Outage", "The lights suddenly go out throughout the school.")
-]
+You may react to the player and other characters,
+but do not control their actions.
 
-@app.post("/world/event")
-def world_event():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    if world["paused"]:
-        return jsonify({"message": "The world is paused."})
-    title, description = random.choice(EVENTS)
-    event = {"title": title, "description": description, "location": world["location"]}
-    world["active_event"] = event
-    world["world_history"].append({"type": "event", "event": event})
-    return jsonify({"event": event})
-
-@app.post("/world/event/clear")
-def clear_event():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    world["active_event"] = None
-    return jsonify({"success": True})
-
-@app.post("/world/advance")
-def advance_world():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    if world["paused"]:
-        return jsonify({"event": None, "paused": True})
-    # Low-frequency autonomous event.
-    if random.random() < 0.22:
-        title, description = random.choice(EVENTS)
-        event = {"title": title, "description": description, "location": world["location"]}
-        world["active_event"] = event
-        world["world_history"].append({"type": "event", "event": event})
-        return jsonify({"event": event})
-    return jsonify({"event": None})
-
-@app.post("/world/event/react")
-def event_react():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    event = data.get("event") or world.get("active_event")
-    if event:
-        world["active_event"] = event
-    participants = data.get("participants") or world["active_characters"]
-    results = []
-    for name in participants:
-        if name not in world["characters"]:
-            continue
-        prompt = character_prompt(world, name, participants, f"React to this event now: {event}")
-        try:
-            reply = ask_ai([
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": "React naturally without waiting for the player."}
-            ], 0.95, 400)
-        except Exception as exc:
-            return jsonify({"error": f"OpenRouter request failed: {exc}"}), 502
-        results.append({"character": name, "reply": reply})
-    return jsonify({"responses": results})
-
-# -------------------------
-# Travel / locations
-# -------------------------
-@app.get("/world/location")
-def get_location():
-    world = get_session(request.args.get("clientId"))
-    return jsonify({"location": world["location"], "locations": LOCATIONS})
-
-@app.post("/world/travel")
-def travel():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    destination = clean(data.get("destination"))
-    origin = clean(data.get("from"), world["location"])
-    participants = data.get("participants") or world["active_characters"]
-    participants = [clean(x) for x in participants if clean(x)]
-    if not destination:
-        return jsonify({"error": "Destination is required."}), 400
-    memory_lines = []
-    for name in participants:
-        for memory in world["memories"].get(name, [])[-10:]:
-            memory_lines.append(f"{name} remembers: {memory}")
-    people = []
-    for name in participants:
-        char = world["characters"].get(name)
-        if char:
-            people.append(f"{name}: {char.get('personality', '')}; {char.get('description', '')}")
-    prompt = f"""
-Write a short immersive travel scene in a school world.
-The player is traveling from {origin} to {destination}.
-Characters traveling with the player: {', '.join(participants) or 'none'}.
-Character details:
-{chr(10).join(people)}
-Shared memories:
-{chr(10).join(memory_lines) or 'None'}
-Recent conversation:
-{chr(10).join(f"{x.get('character', 'Player')}: {x.get('content', '')}" for x in world['conversation'][-15:])}
-
-Rules:
-- Do not teleport instantly.
-- Describe the trip in 2-5 paragraphs.
-- Characters may talk and react naturally.
-- Never write dialogue or actions for the player.
-- Use relevant shared memories naturally.
-- End with the group arriving at {destination}.
+If something important is said, remember it because
+you were personally present for this conversation.
 """
+        )
+
+        messages = [
+            {
+                "role": "system",
+                "content": prompt
+            }
+        ]
+
+        for item in conversation_history[-25:]:
+
+            if item["role"] == "user":
+
+                messages.append({
+                    "role": "user",
+                    "content":
+                        item["content"]
+                })
+
+            elif item["role"] == "assistant":
+
+                speaker = item.get(
+                    "character",
+                    character_name
+                )
+
+                messages.append({
+                    "role": "assistant",
+                    "content":
+                        f"{speaker}: "
+                        f"{item['content']}"
+                })
+
+        try:
+
+            reply = ask_ai(
+                messages,
+                temperature=0.9
+            )
+
+        except Exception as error:
+
+            return jsonify({
+                "error": str(error)
+            }), 500
+
+        add_conversation_message(
+            "assistant",
+            reply,
+            character=character_name,
+            participants=participants
+        )
+
+        responses.append({
+            "character":
+                character_name,
+            "reply":
+                reply
+        })
+
+    return jsonify({
+        "responses":
+            responses
+    })
+
+
+# ============================================================
+# CREATE CHARACTER
+# ============================================================
+
+@app.route(
+    "/character/create",
+    methods=["POST"]
+)
+def create_character():
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    name = clean_text(
+        data.get("name")
+    )
+
+    personality = clean_text(
+        data.get("personality"),
+        "Friendly and interesting."
+    )
+
+    background = clean_text(
+        data.get("background"),
+        "A student at the school."
+    )
+
+    if not name:
+
+        return jsonify({
+            "error":
+                "Character name is required."
+        }), 400
+
+    if name in characters:
+
+        return jsonify({
+            "error":
+                "That character already exists."
+        }), 400
+
+    characters[name] = {
+        "name": name,
+        "personality": personality,
+        "background": background
+    }
+
+    character_memories[name] = []
+
+    return jsonify({
+        "success": True,
+        "character":
+            characters[name]
+    })
+
+
+# ============================================================
+# CHARACTERS
+# ============================================================
+
+@app.route(
+    "/characters",
+    methods=["GET"]
+)
+def get_characters():
+
+    return jsonify({
+        "characters":
+            list(characters.values())
+    })
+
+
+# ============================================================
+# WORLD EVENT
+# ============================================================
+
+@app.route(
+    "/world/event",
+    methods=["POST"]
+)
+def world_event():
+
+    if world_paused:
+
+        return jsonify({
+            "message":
+                "The world is paused."
+        })
+
+    event_choices = [
+
+        {
+            "title":
+                "🌧 Sudden Storm",
+            "description":
+                "A sudden storm moves across the school."
+        },
+
+        {
+            "title":
+                "🚨 Strange Announcement",
+            "description":
+                "A strange announcement echoes through the school."
+        },
+
+        {
+            "title":
+                "🎉 School Festival",
+            "description":
+                "A surprise festival begins nearby."
+        },
+
+        {
+            "title":
+                "🌌 Strange Lights",
+            "description":
+                "Strange lights appear in the sky."
+        },
+
+        {
+            "title":
+                "🔌 Power Outage",
+            "description":
+                "The lights suddenly go out throughout the school."
+        }
+
+    ]
+
+    event = random.choice(
+        event_choices
+    )
+
+    event["location"] = current_location
+
+    add_world_history(
+        f"""
+WORLD EVENT:
+{event['title']}
+
+{event['description']}
+
+Location:
+{current_location}
+"""
+    )
+
+    return jsonify({
+        "event": event
+    })
+
+
+# ============================================================
+# CHARACTER EVENT REACTIONS
+# ============================================================
+
+@app.route(
+    "/world/event/react",
+    methods=["POST"]
+)
+def world_event_react():
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    title = clean_text(
+        data.get("title")
+    )
+
+    description = clean_text(
+        data.get("description")
+    )
+
+    participants = data.get(
+        "participants",
+        []
+    )
+
+    if not isinstance(
+        participants,
+        list
+    ):
+        participants = []
+
+    participants = [
+        clean_text(name)
+        for name in participants
+        if clean_text(name)
+    ]
+
+    if not title:
+
+        return jsonify({
+            "error":
+                "Event title is required."
+        }), 400
+
+    responses = []
+
+    for character_name in participants:
+
+        character = characters.get(
+            character_name
+        )
+
+        if not character:
+            continue
+
+        prompt = build_character_prompt(
+            character,
+            participants=participants,
+            extra_context=f"""
+A WORLD EVENT is happening RIGHT NOW.
+
+EVENT:
+{title}
+
+DETAILS:
+{description}
+
+The event is happening in the shared world.
+
+You are currently experiencing it.
+
+React naturally as {character_name}.
+
+Do not wait for the player to mention it.
+
+Do not act as the player.
+
+Do not claim that the event happened only to you.
+
+Other characters can see or experience it too.
+"""
+        )
+
+        try:
+
+            reply = ask_ai(
+                [
+                    {
+                        "role":
+                            "system",
+                        "content":
+                            prompt
+                    },
+                    {
+                        "role":
+                            "user",
+                        "content":
+                            "React naturally."
+                    }
+                ],
+                temperature=0.95
+            )
+
+        except Exception as error:
+
+            return jsonify({
+                "error": str(error)
+            }), 500
+
+        add_conversation_message(
+            "assistant",
+            reply,
+            character=character_name,
+            participants=participants
+        )
+
+        responses.append({
+            "character":
+                character_name,
+            "reply":
+                reply
+        })
+
+    return jsonify({
+        "responses":
+            responses
+    })
+
+
+# ============================================================
+# STORY TRAVEL
+# ============================================================
+
+@app.route(
+    "/world/travel",
+    methods=["POST"]
+)
+def travel():
+
+    global current_location
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    destination = clean_text(
+        data.get("destination")
+    )
+
+    from_location = clean_text(
+        data.get("from"),
+        current_location
+    )
+
+    participants = data.get(
+        "participants",
+        []
+    )
+
+    if not isinstance(
+        participants,
+        list
+    ):
+        participants = []
+
+    participants = [
+        clean_text(name)
+        for name in participants
+        if clean_text(name)
+    ]
+
+    if not destination:
+
+        return jsonify({
+            "error":
+                "Destination is required."
+        }), 400
+
+    character_info = []
+
+    for name in participants:
+
+        character = characters.get(
+            name
+        )
+
+        if character:
+
+            character_info.append(
+                f"""
+{name}
+Personality:
+{character.get('personality', '')}
+
+Background:
+{character.get('background', '')}
+"""
+            )
+
+    people_text = "\n".join(
+        character_info
+    )
+
+    recent_conversation = "\n".join(
+        f"{item.get('character', 'Player')}: "
+        f"{item.get('content', '')}"
+        for item in conversation_history[-15:]
+    )
+
+    shared_memories = []
+
+    for name in participants:
+
+        memories = get_memories(
+            name
+        )
+
+        for memory in memories[-20:]:
+
+            shared_memories.append(
+                f"{name} remembers: {memory}"
+            )
+
+    memory_text = "\n".join(
+        shared_memories
+    )
+
+    prompt = f"""
+Write a short immersive story showing the player
+traveling from:
+
+{from_location}
+
+to:
+
+{destination}
+
+Characters traveling with the player:
+
+{people_text}
+
+RECENT CONVERSATION:
+
+{recent_conversation}
+
+CHARACTER MEMORIES:
+
+{memory_text}
+
+WORLD RULES:
+
+- Do not instantly teleport the player.
+- Describe the journey.
+- Characters can talk while traveling.
+- Use their personalities.
+- Relevant memories can naturally appear.
+- Do not write dialogue for the player.
+- Do not control the player's choices.
+- Keep the scene around 2 to 5 paragraphs.
+- End with everyone arriving at {destination}.
+- Do not mention being an AI.
+"""
+
     try:
-        story = ask_ai([
-            {"role": "system", "content": "You write immersive roleplay travel scenes."},
-            {"role": "user", "content": prompt}
-        ], 0.9, 700)
-    except Exception as exc:
-        return jsonify({"error": f"OpenRouter request failed: {exc}"}), 502
-    world["location"] = destination
-    world["world_history"].append({"type": "travel", "from": origin, "to": destination, "story": story})
-    world["conversation"].append({"role": "system", "content": story, "participants": participants})
-    return jsonify({"success": True, "from": origin, "to": destination, "story": story, "location": destination})
 
-@app.post("/world/location")
+        story = ask_ai(
+            [
+                {
+                    "role":
+                        "system",
+                    "content":
+                        "You write immersive "
+                        "travel scenes for a "
+                        "living fictional school."
+                },
+                {
+                    "role":
+                        "user",
+                    "content":
+                        prompt
+                }
+            ],
+            temperature=0.9
+        )
+
+    except Exception as error:
+
+        return jsonify({
+            "error": str(error)
+        }), 500
+
+    add_world_history(
+        f"""
+TRAVEL:
+{from_location} -> {destination}
+
+{story}
+"""
+    )
+
+    add_conversation_message(
+        "system",
+        story,
+        participants=participants
+    )
+
+    current_location = destination
+
+    return jsonify({
+        "from":
+            from_location,
+        "to":
+            destination,
+        "story":
+            story,
+        "location":
+            current_location
+    })
+
+
+# ============================================================
+# LOCATION
+# ============================================================
+
+@app.route(
+    "/world/location",
+    methods=["GET"]
+)
+def get_location():
+
+    return jsonify({
+        "location":
+            current_location,
+        "locations":
+            locations
+    })
+
+
+@app.route(
+    "/world/location",
+    methods=["POST"]
+)
 def set_location():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    location = clean(data.get("location"))
+
+    global current_location
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    location = clean_text(
+        data.get("location")
+    )
+
     if not location:
-        return jsonify({"error": "Location is required."}), 400
-    world["location"] = location
-    return jsonify({"success": True, "location": location})
 
-# -------------------------
-# World state / resets
-# -------------------------
-@app.post("/world")
+        return jsonify({
+            "error":
+                "Location is required."
+        }), 400
+
+    current_location = location
+
+    if location not in locations:
+        locations.append(location)
+
+    return jsonify({
+        "success": True,
+        "location":
+            current_location
+    })
+
+
+# ============================================================
+# WORLD STATE
+# ============================================================
+
+@app.route(
+    "/world",
+    methods=["POST"]
+)
 def world_state():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
+
+    global world_paused
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
     if "paused" in data:
-        world["paused"] = bool(data["paused"])
-    if "activeCharacters" in data and isinstance(data["activeCharacters"], list):
-        world["active_characters"] = [clean(x) for x in data["activeCharacters"] if clean(x)]
-    return jsonify({"paused": world["paused"], "location": world["location"], "activeCharacters": world["active_characters"]})
 
-@app.post("/conversation/reset")
+        world_paused = bool(
+            data["paused"]
+        )
+
+    return jsonify({
+        "paused":
+            world_paused,
+        "location":
+            current_location
+    })
+
+
+# ============================================================
+# RESET CONVERSATION
+# ============================================================
+
+@app.route(
+    "/conversation/reset",
+    methods=["POST"]
+)
 def reset_conversation():
-    data = request.get_json(silent=True) or {}
-    world = get_session(data.get("clientId"))
-    world["conversation"] = []
-    return jsonify({"success": True})
 
-@app.post("/world/reset")
+    conversation_history.clear()
+
+    return jsonify({
+        "success": True
+    })
+
+
+# ============================================================
+# RESET WORLD
+# ============================================================
+
+@app.route(
+    "/world/reset",
+    methods=["POST"]
+)
 def reset_world():
-    data = request.get_json(silent=True) or {}
-    client_id = data.get("clientId")
-    sessions[str(client_id or "default")] = new_world()
-    return jsonify({"success": True, "location": "Classroom"})
 
-@app.get("/memory/<character_name>")
-def character_memory(character_name):
-    world = get_session(request.args.get("clientId"))
-    return jsonify({"character": character_name, "memories": world["memories"].get(character_name, [])})
+    global current_location
+    global world_paused
 
-# -------------------------
-# Start for local use
-# -------------------------
+    conversation_history.clear()
+    world_history.clear()
+
+    for name in character_memories:
+
+        character_memories[name] = []
+
+    current_location = "Hallway"
+
+    world_paused = False
+
+    return jsonify({
+        "success": True,
+        "location":
+            current_location
+    })
+
+
+# ============================================================
+# MEMORY
+# ============================================================
+
+@app.route(
+    "/memory/<character_name>",
+    methods=["GET"]
+)
+def character_memory(
+    character_name
+):
+
+    return jsonify({
+        "character":
+            character_name,
+        "memories":
+            get_memories(
+                character_name
+            )
+    })
+
+
+# ============================================================
+# SERVE YOUR HTML
+# ============================================================
+
+@app.route("/")
+def index():
+
+    return send_from_directory(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        ),
+        "index.html"
+    )
+
+
+# ============================================================
+# START
+# ============================================================
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port, debug=False)
+
+    print(
+        "=========================================="
+    )
+
+    print(
+        " SCHOOL WORLD V7.5"
+    )
+
+    print(
+        " Shared Memory + Story Travel"
+    )
+
+    print(
+        "=========================================="
+    )
+
+    print(
+        "Server: http://127.0.0.1:5000"
+    )
+
+    app.run(
+        host="127.0.0.1",
+        port=5000,
+        debug=True
+    )
