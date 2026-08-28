@@ -1236,9 +1236,7 @@ def character_memory(
 def index():
 
     return send_from_directory(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        ),
+        os.path.dirname,
         "index.html"
     )
 
