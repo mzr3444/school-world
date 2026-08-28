@@ -1232,14 +1232,6 @@ def character_memory(
 # SERVE YOUR HTML
 # ============================================================
 
-@app.route("/")
-def index():
-
-    return send_from_directory(
-        os.path.dirname,
-        "index.html"
-    )
-
 
 # ============================================================
 # START
