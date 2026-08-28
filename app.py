@@ -317,18 +317,21 @@ def chat():
         silent=True
     ) or {}
 
-    message = clean_text(
-        data.get("message")
-    )
+    # Support both the simple API and the current browser frontend.
+    # The frontend sends its conversation as `messages` and the active
+    # characters as `activeCharacters`.
+    message = clean_text(data.get("message"))
+    frontend_messages = data.get("messages", [])
+    if not message and isinstance(frontend_messages, list):
+        for item in reversed(frontend_messages):
+            if isinstance(item, dict) and item.get("role") == "user":
+                message = clean_text(item.get("content"))
+                if message:
+                    break
 
-    character_name = clean_text(
-        data.get("character")
-    )
+    character_name = clean_text(data.get("character"))
 
-    participants = data.get(
-        "participants",
-        []
-    )
+    participants = data.get("participants", data.get("activeCharacters", []))
 
     if not isinstance(
         participants,
@@ -361,12 +364,18 @@ def chat():
             "error": "Character is required."
         }), 400
 
-    if character_name not in characters:
+    # Accept characters supplied by the frontend so custom/default
+    # characters such as Luna and Jayden can talk to the backend.
+    frontend_characters = data.get("worldCharacters")
+    if isinstance(frontend_characters, dict):
+        for name, info in frontend_characters.items():
+            if isinstance(info, dict):
+                characters[name] = info
+                character_memories.setdefault(name, [])
 
+    if character_name not in characters:
         return jsonify({
-            "error":
-                f"Character '{character_name}' "
-                "was not found."
+            "error": f"Character '{character_name}' was not found."
         }), 404
 
     # Save player's message.
@@ -444,8 +453,10 @@ def chat():
 
     return jsonify({
         "reply": reply,
+        "response": reply,
         "character": character_name,
-        "participants": participants
+        "participants": participants,
+        "active_characters": participants
     })
 
 
@@ -884,6 +895,36 @@ Other characters can see or experience it too.
     })
 
 
+
+
+# ============================================================
+# ADVANCE WORLD
+# ============================================================
+
+@app.route("/world/advance", methods=["POST"])
+def advance_world():
+    if world_paused:
+        return jsonify({"success": True, "paused": True, "event": None, "world": {"paused": True, "location": current_location}})
+
+    event = None
+    if random.random() < 0.30:
+        choices = [
+            {"title": "🌧 Sudden Storm", "description": "A sudden storm moves across the school."},
+            {"title": "🚨 Strange Announcement", "description": "A strange announcement echoes through the school."},
+            {"title": "🎉 School Festival", "description": "A surprise festival begins nearby."},
+            {"title": "🔌 Power Outage", "description": "The lights suddenly go out throughout the school."}
+        ]
+        event = random.choice(choices)
+        event["location"] = current_location
+        add_world_history(f"WORLD EVENT: {event['title']}\n{event['description']}\nLocation: {current_location}")
+
+    return jsonify({
+        "success": True,
+        "paused": False,
+        "event": event,
+        "world": {"paused": False, "location": current_location}
+    })
+
 # ============================================================
 # STORY TRAVEL
 # ============================================================
@@ -1228,9 +1269,6 @@ def character_memory(
     })
 
 
-# ============================================================
-# SERVE YOUR HTML
-# ============================================================
 
 
 # ============================================================
