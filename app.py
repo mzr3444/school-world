@@ -3,7 +3,10 @@ import json
 import random
 import re
 from datetime import datetime
-
+def clean_text(text):
+    if text is None:
+        return ""
+    return str(text).strip()
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 
