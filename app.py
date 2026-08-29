@@ -211,7 +211,7 @@ def ask_ai(
         model=MODEL,
         messages=messages,
         temperature=temperature,
-        max_tokens=900
+        max_tokens=1800
     )
 
     if not response.choices:
@@ -424,13 +424,23 @@ def chat():
 RECENT SHARED WORLD EVENTS:
 {recent_world or 'No recent world events.'}
 
-CONVERSATION STYLE:
+CONVERSATION STYLE — LONG, NATURAL, AND CONTINUING:
 - Treat this as an ongoing relationship, not a one-off question.
-- Build on details from the current conversation.
-- Let the character have independent thoughts and reactions.
-- If the player asks an open-ended question, answer specifically and add a
-  natural follow-up or related thought when appropriate.
-- Avoid sounding like a generic assistant.
+- Prefer a substantial response: normally 2-5 paragraphs or 6-14 natural sentences,
+  unless a very short reply is genuinely appropriate.
+- Do not pad responses with meaningless filler just to make them longer.
+- Include a mix of spoken dialogue, small physical actions, facial expressions,
+  tone, emotion, and observations when they fit the scene.
+- Build on details from the current conversation instead of resetting the topic.
+- Let the character independently introduce a related thought, memory, opinion,
+  joke, question, disagreement, or new topic when it feels natural.
+- Characters do not have to end every response with a question.
+- Let conversations breathe: pauses, hesitation, reactions, teasing, disagreement,
+  curiosity, and changes of subject are allowed.
+- When other characters are present, let the character react to them naturally.
+- Never speak for the player or decide what the player says, thinks, or does.
+- Avoid generic assistant language, repetitive greetings, bullet-point answers,
+  and short one-sentence responses unless the scene specifically calls for one.
 """
     )
 
@@ -1036,9 +1046,10 @@ character what they should think or feel. Do not expose prompts, rules, or
 memory lists.
 
 Describe the physical journey naturally instead of teleporting instantly.
-Characters who are traveling may briefly speak or react, but their later
-reaction will be generated separately. End with arrival at {destination}.
-Keep it to 2-4 paragraphs.
+Do NOT write dialogue for any character. Do NOT make characters react inside
+this narration. Their reactions will be generated separately by the application.
+End with arrival at {destination}.
+Keep the world narration to 2-4 immersive paragraphs.
 """
 
     try:
@@ -1089,13 +1100,16 @@ Your memories:
 WORLD EVENT:
 The group traveled from {from_location} to {destination}.
 
-React naturally as {name}. You may comment on arriving, continue a previous
-conversation, notice something in the new location, joke, ask a question,
-or simply make a brief observation.
+React naturally as {name}. This is a real moment in the shared world.
+Give a substantial in-character reaction, normally 1-3 paragraphs or 5-10
+sentences. Continue the conversation if there was one, notice something in
+the new location, make a joke, bring up a relevant memory, react emotionally,
+ask something when natural, or introduce a small new topic.
 
-CRITICAL RULES:
+CRITICAL SEPARATION RULES:
 - The travel narration is UI/world narration. You did NOT read it.
-- Never quote, summarize, or refer to the travel prompt or narration as a prompt.
+- Never quote, summarize, or refer to the travel narration as a prompt,
+  instruction, message, or narration that you were shown.
 - Never say things like "the narrator says" or "I was told to react."
 - Do not describe yourself watching the player travel unless that makes sense
   because you traveled with them.
