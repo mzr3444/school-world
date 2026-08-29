@@ -4,18 +4,41 @@ import random
 import re
 import threading
 from datetime import datetime
-
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 
 app = Flask(__name__)
 
 # ============================================================
-# CONFIG
+# CONFIGURATION
 # ============================================================
 
 API_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
-MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b")
+
+# IMPORTANT:
+# Do NOT depend on the old OPENROUTER_MODEL variable.
+#
+# We try these models in order.
+# openrouter/free is especially useful because OpenRouter
+# automatically selects an available free model.
+FREE_MODELS = [
+    "openrouter/free",
+    "openai/gpt-oss-20b:free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+]
+
+# If the environment variable contains a model, put it first,
+# but NEVER let an old paid/invalid model prevent fallback.
+ENV_MODEL = os.getenv("OPENROUTER_MODEL", "").strip()
+
+if ENV_MODEL and ENV_MODEL not in FREE_MODELS:
+    # Only use an explicitly supplied model if it appears to be
+    # a free variant or the OpenRouter free router.
+    if ENV_MODEL == "openrouter/free" or ENV_MODEL.endswith(":free"):
+        FREE_MODELS.insert(0, ENV_MODEL)
 
 client = None
 
@@ -25,13 +48,14 @@ if API_KEY:
         api_key=API_KEY
     )
 
+
+# ============================================================
+# DATA
+# ============================================================
+
 DATA_FILE = "school_world_data.json"
+
 data_lock = threading.Lock()
-
-
-# ============================================================
-# DEFAULT CHARACTERS
-# ============================================================
 
 DEFAULT_CHARACTERS = [
     {
@@ -39,7 +63,7 @@ DEFAULT_CHARACTERS = [
         "name": "Alex",
         "role": "Student",
         "personality": "Friendly, curious, funny, energetic, and sometimes impulsive.",
-        "description": "Alex likes meeting people and turning boring situations into something interesting.",
+        "description": "Alex likes meeting people and usually tries to turn boring situations into something interesting.",
         "traits": ["Friendly", "Curious", "Funny", "Impulsive"],
         "memory": [],
         "conversation": []
@@ -49,7 +73,7 @@ DEFAULT_CHARACTERS = [
         "name": "Maya",
         "role": "Student",
         "personality": "Intelligent, calm, observant, sarcastic, and independent.",
-        "description": "Maya notices details other people miss and usually thinks before speaking.",
+        "description": "Maya notices details other people miss and tends to think before she speaks.",
         "traits": ["Smart", "Calm", "Observant", "Sarcastic"],
         "memory": [],
         "conversation": []
@@ -58,7 +82,7 @@ DEFAULT_CHARACTERS = [
         "id": "jordan",
         "name": "Jordan",
         "role": "Student",
-        "personality": "Confident, competitive, outgoing, playful, and stubborn.",
+        "personality": "Confident, competitive, outgoing, playful, and occasionally stubborn.",
         "description": "Jordan loves competition and enjoys challenging people.",
         "traits": ["Confident", "Competitive", "Outgoing", "Stubborn"],
         "memory": [],
@@ -68,8 +92,8 @@ DEFAULT_CHARACTERS = [
         "id": "sam",
         "name": "Sam",
         "role": "Student",
-        "personality": "Quiet, creative, thoughtful, kind, and mysterious.",
-        "description": "Sam spends a lot of time drawing, reading, and observing the school.",
+        "personality": "Quiet, creative, thoughtful, kind, and slightly mysterious.",
+        "description": "Sam spends a lot of time drawing, reading, and observing what happens around the school.",
         "traits": ["Creative", "Quiet", "Kind", "Thoughtful"],
         "memory": [],
         "conversation": []
@@ -89,34 +113,33 @@ DEFAULT_LOCATIONS = [
 ]
 
 
-# ============================================================
-# DATA
-# ============================================================
-
-def new_story_state():
-    return {
-        "active": False,
-        "story_id": random.randint(100000, 999999),
-        "title": "",
-        "theme": "",
-        "current_node": "start",
-        "history": [],
-        "seen_nodes": [],
-        "ending": None,
-        "tree": {}
-    }
-
-
 def default_data():
     return {
         "world_id": random.randint(100000, 999999),
         "world_number": 1,
         "player_location": "Classroom",
-        "characters": json.loads(json.dumps(DEFAULT_CHARACTERS)),
-        "locations": DEFAULT_LOCATIONS.copy(),
+
+        "characters": json.loads(
+            json.dumps(DEFAULT_CHARACTERS)
+        ),
+
+        "locations": DEFAULT_LOCATIONS,
+
         "world_memory": [],
         "background_events": [],
-        "story": new_story_state(),
+
+        "story": {
+            "active": False,
+            "story_id": random.randint(100000, 999999),
+            "title": "",
+            "theme": "",
+            "current_node": "start",
+            "history": [],
+            "seen_nodes": ["start"],
+            "ending": None,
+            "tree": {}
+        },
+
         "improvement": {
             "facts": [],
             "preferences": [],
@@ -126,10 +149,31 @@ def default_data():
     }
 
 
-def save_data(current_data=None):
-    if current_data is None:
-        current_data = data
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        new_data = default_data()
+        save_data(new_data)
+        return new_data
 
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+
+        base = default_data()
+
+        for key, value in base.items():
+            if key not in loaded:
+                loaded[key] = value
+
+        return loaded
+
+    except Exception:
+        new_data = default_data()
+        save_data(new_data)
+        return new_data
+
+
+def save_data(current_data):
     with data_lock:
         temp_file = DATA_FILE + ".tmp"
 
@@ -144,41 +188,11 @@ def save_data(current_data=None):
         os.replace(temp_file, DATA_FILE)
 
 
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        fresh = default_data()
-        save_data(fresh)
-        return fresh
-
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
-
-        base = default_data()
-
-        for key, value in base.items():
-            if key not in loaded:
-                loaded[key] = value
-
-        if "story" not in loaded:
-            loaded["story"] = new_story_state()
-
-        if "improvement" not in loaded:
-            loaded["improvement"] = base["improvement"]
-
-        return loaded
-
-    except Exception:
-        fresh = default_data()
-        save_data(fresh)
-        return fresh
-
-
 data = load_data()
 
 
 # ============================================================
-# HELPERS
+# TEXT HELPERS
 # ============================================================
 
 def clean_text(text):
@@ -186,30 +200,57 @@ def clean_text(text):
         return ""
 
     text = str(text)
+
     text = text.replace("\x00", "")
+
     text = re.sub(
-        r"```(?:json|python|html)?",
+        r"```(?:json|python|html|text)?",
         "",
         text,
-        flags=re.IGNORECASE
+        flags=re.I
     )
+
     text = text.replace("```", "")
 
     return text.strip()
+
+
+def safe_json_from_ai(text):
+    text = clean_text(text)
+
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    start = text.find("{")
+    end = text.rfind("}")
+
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except Exception:
+            pass
+
+    return None
+
+
+def trim_memory(items, limit=30):
+    if not items:
+        return []
+
+    if len(items) <= limit:
+        return items
+
+    return items[-limit:]
 
 
 def find_character(character_id):
     for character in data["characters"]:
         if character["id"] == character_id:
             return character
+
     return None
-
-
-def trim(items, limit):
-    if len(items) <= limit:
-        return items
-
-    return items[-limit:]
 
 
 def remember(character, text):
@@ -219,8 +260,13 @@ def remember(character, text):
         return
 
     character.setdefault("memory", [])
+
     character["memory"].append(text)
-    character["memory"] = trim(character["memory"], 40)
+
+    character["memory"] = trim_memory(
+        character["memory"],
+        40
+    )
 
 
 def add_world_memory(text):
@@ -230,8 +276,13 @@ def add_world_memory(text):
         return
 
     data.setdefault("world_memory", [])
+
     data["world_memory"].append(text)
-    data["world_memory"] = trim(data["world_memory"], 60)
+
+    data["world_memory"] = trim_memory(
+        data["world_memory"],
+        50
+    )
 
 
 def add_improvement(text):
@@ -240,44 +291,120 @@ def add_improvement(text):
     if not text:
         return
 
-    facts = data["improvement"].setdefault("facts", [])
+    improvements = data["improvement"]["facts"]
 
-    if text not in facts:
-        facts.append(text)
+    if text not in improvements:
+        improvements.append(text)
 
-    data["improvement"]["facts"] = trim(facts, 50)
+    data["improvement"]["facts"] = trim_memory(
+        improvements,
+        50
+    )
 
 
 # ============================================================
-# AI
+# AI SYSTEM WITH AUTOMATIC FALLBACK
 # ============================================================
 
-def call_ai(system_prompt, messages, temperature=0.8, max_tokens=600):
+def call_ai(
+    system_prompt,
+    messages,
+    temperature=0.8,
+    max_tokens=700
+):
+    """
+    Attempts several OpenRouter free models.
+
+    If one fails:
+        404 -> next model
+        402 -> next model
+        429 -> next model
+        timeout -> next model
+        other API error -> next model
+
+    Returns:
+        AI response
+        OR
+        AI_ERROR: ...
+    """
+
     if not client:
-        return "AI_ERROR: API key is not configured."
-
-    try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                }
-            ] + messages,
-            temperature=temperature,
-            max_tokens=max_tokens
+        return (
+            "AI_ERROR: OPENROUTER_API_KEY is missing. "
+            "Add it to Render Environment Variables."
         )
 
-        if not response.choices:
-            return "AI_ERROR: The AI returned no response."
+    errors = []
 
-        result = response.choices[0].message.content
+    # Remove duplicates while preserving order.
+    models = []
 
-        return clean_text(result)
+    for model_name in FREE_MODELS:
+        if model_name and model_name not in models:
+            models.append(model_name)
 
-    except Exception as e:
-        return f"AI_ERROR: {str(e)}"
+    for model_name in models:
+
+        try:
+            print(
+                f"[AI] Trying model: {model_name}",
+                flush=True
+            )
+
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    }
+                ] + messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+
+            if not response.choices:
+                errors.append(
+                    f"{model_name}: no choices returned"
+                )
+                continue
+
+            result = response.choices[0].message.content
+
+            result = clean_text(result)
+
+            if not result:
+                errors.append(
+                    f"{model_name}: empty response"
+                )
+                continue
+
+            print(
+                f"[AI] Success with model: {model_name}",
+                flush=True
+            )
+
+            return result
+
+        except Exception as e:
+
+            error_text = str(e)
+
+            print(
+                f"[AI] Failed {model_name}: {error_text}",
+                flush=True
+            )
+
+            errors.append(
+                f"{model_name}: {error_text}"
+            )
+
+            continue
+
+    return (
+        "AI_ERROR: All free models failed.\n"
+        + "\n".join(errors)
+    )
 
 
 # ============================================================
@@ -295,25 +422,25 @@ def home():
 
 @app.route("/world", methods=["GET"])
 def get_world():
+
     return jsonify({
         "world_id": data["world_id"],
         "world_number": data["world_number"],
         "location": data["player_location"],
         "characters": data["characters"],
         "locations": data["locations"],
-        "world_memory": data["world_memory"][-20:],
-        "background_events": data["background_events"][-20:],
         "story": data["story"],
         "improvement": data["improvement"]
     })
 
 
 # ============================================================
-# NORMAL AI CHARACTER CHAT
+# NORMAL CHARACTER CHAT
 # ============================================================
 
 @app.route("/chat", methods=["POST"])
 def chat():
+
     body = request.get_json(silent=True) or {}
 
     character_id = body.get("character_id")
@@ -321,26 +448,37 @@ def chat():
 
     if not character_id or not message:
         return jsonify({
-            "error": "Character and message are required."
+            "error": "character_id and message are required"
         }), 400
 
     character = find_character(character_id)
 
     if not character:
         return jsonify({
-            "error": "Character not found."
+            "error": "Character not found"
         }), 404
 
-    remember(character, f"Player said: {message}")
+    remember(
+        character,
+        f"Player said: {message}"
+    )
 
-    recent = character.get("conversation", [])[-18:]
+    recent_conversation = (
+        character.get("conversation", [])
+    )[-20:]
 
     messages = []
 
-    for item in recent:
+    for item in recent_conversation:
+
+        role = item.get("role")
+
+        if role not in ["user", "assistant"]:
+            continue
+
         messages.append({
-            "role": item["role"],
-            "content": item["content"]
+            "role": role,
+            "content": item.get("content", "")
         })
 
     messages.append({
@@ -348,9 +486,12 @@ def chat():
         "content": message
     })
 
+    location = data["player_location"]
+
     other_characters = [
         {
             "name": c["name"],
+            "role": c["role"],
             "personality": c["personality"]
         }
         for c in data["characters"]
@@ -358,7 +499,7 @@ def chat():
     ]
 
     system_prompt = f"""
-You are {character["name"]}, a person inside a living school simulation.
+You are {character["name"]}, a character inside a living school simulation.
 
 ROLE:
 {character["role"]}
@@ -373,13 +514,13 @@ TRAITS:
 {", ".join(character.get("traits", []))}
 
 CURRENT PLAYER LOCATION:
-{data["player_location"]}
+{location}
 
-WORLD:
-World #{data["world_number"]}
+WORLD NUMBER:
+{data["world_number"]}
 
 YOUR MEMORY:
-{json.dumps(character.get("memory", [])[-20:], ensure_ascii=False)}
+{json.dumps(character.get("memory", [])[-25:], ensure_ascii=False)}
 
 WORLD MEMORY:
 {json.dumps(data.get("world_memory", [])[-20:], ensure_ascii=False)}
@@ -387,35 +528,76 @@ WORLD MEMORY:
 OTHER CHARACTERS:
 {json.dumps(other_characters, ensure_ascii=False)}
 
-IMPORTANT:
+RULES:
 
-- Stay in character.
-- Have your own opinions.
-- Do not blindly agree.
-- Remember previous conversations.
-- Use the character's personality.
-- Give medium-length responses.
-- Usually respond in 2-5 paragraphs.
-- Don't make every response enormous.
-- React naturally.
-- The player is a separate person.
-- Never control the player's actions.
-- If the player says they are traveling somewhere, acknowledge it naturally.
-- Do not pretend to physically travel with the player unless appropriate.
-- You live in the school world.
-- You can know other students.
-- You can mention things that happened earlier.
-- Do not constantly mention AI or chatbots.
+1. Stay completely in character.
+
+2. Remember previous conversations.
+
+3. Give medium-length responses.
+
+4. Normally respond with roughly 2-5 paragraphs,
+   depending on what is happening.
+
+5. Do not make every response extremely long.
+
+6. Do not constantly agree with the player.
+
+7. Have your own opinions.
+
+8. You can joke, disagree, get excited, become confused,
+   become suspicious, become interested, or become annoyed
+   according to your personality.
+
+9. You are a person in the school world, not a chatbot.
+
+10. Never say that you are an AI unless the story logically
+    requires it.
+
+11. Never control the player's actions.
+
+12. The player is a separate person.
+
+13. If the player says they are traveling somewhere,
+    acknowledge it naturally.
+
+14. Do NOT automatically pretend you traveled with them.
+
+15. You know the school locations.
+
+16. You may know things that happened elsewhere if they
+    are in your memory.
+
+17. Characters can have relationships with one another.
+
+18. Characters may remember things about the player.
+
+19. Do not dump all memories into every response.
+
+20. Use memories only when relevant.
+
+21. Make the conversation feel like a real relationship
+    developing over time.
+
+22. If the player has talked to you many times before,
+    your behavior should reflect that history.
+
+23. Avoid repeating the same phrases.
+
+24. Avoid generic assistant-style responses.
+
+25. React naturally to what the player actually said.
 """
 
     answer = call_ai(
         system_prompt,
         messages,
         temperature=0.82,
-        max_tokens=650
+        max_tokens=700
     )
 
     if answer.startswith("AI_ERROR:"):
+
         return jsonify({
             "error": answer
         }), 500
@@ -434,54 +616,68 @@ IMPORTANT:
         "time": datetime.utcnow().isoformat()
     })
 
-    character["conversation"] = trim(
+    character["conversation"] = trim_memory(
         character["conversation"],
         80
     )
 
-    if len(message) >= 25:
+    if len(message) > 20:
+
         add_improvement(
-            f"{character['name']} conversation detail: {message[:160]}"
+            f"Conversation detail with "
+            f"{character['name']}: "
+            f"{message[:180]}"
         )
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "reply": answer,
         "character": character,
-        "location": data["player_location"]
+        "location": location
     })
 
 
 # ============================================================
-# CONVERSATION RESET
+# RESET CHARACTER CONVERSATION
 # ============================================================
 
 @app.route("/conversation/reset", methods=["POST"])
 def reset_conversation():
+
     body = request.get_json(silent=True) or {}
 
-    character = find_character(body.get("character_id"))
+    character_id = body.get("character_id")
+
+    character = find_character(character_id)
 
     if not character:
+
         return jsonify({
-            "error": "Character not found."
+            "error": "Character not found"
         }), 404
 
     character["conversation"] = []
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
-        "message": f"Conversation with {character['name']} reset."
+        "message":
+            f"Conversation with {character['name']} reset."
     })
 
 
+# ============================================================
+# NEW TEXT
+# ============================================================
+
 @app.route("/conversation/new", methods=["POST"])
-def new_conversation():
+def new_text():
+
     return jsonify({
-        "success": True
+        "success": True,
+        "message": "New conversation started."
     })
 
 
@@ -491,6 +687,7 @@ def new_conversation():
 
 @app.route("/characters/create", methods=["POST"])
 def create_character():
+
     body = request.get_json(silent=True) or {}
 
     name = clean_text(body.get("name"))
@@ -501,28 +698,28 @@ def create_character():
     traits = body.get("traits", [])
 
     if not name:
+
         return jsonify({
-            "error": "Name is required."
+            "error": "Character name is required."
         }), 400
 
     if not personality:
+
         return jsonify({
-            "error": "Personality is required."
+            "error": "Character personality is required."
         }), 400
 
     if not isinstance(traits, list):
         traits = []
 
-    safe_name = re.sub(
-        r"[^a-z0-9]+",
-        "-",
-        name.lower()
-    ).strip("-")
-
     character_id = (
-        safe_name +
-        "-" +
-        str(random.randint(1000, 9999))
+        re.sub(
+            r"[^a-z0-9]+",
+            "-",
+            name.lower()
+        ).strip("-")
+        + "-"
+        + str(random.randint(1000, 9999))
     )
 
     character = {
@@ -530,11 +727,13 @@ def create_character():
         "name": name,
         "role": role,
         "personality": personality,
-        "description": description or f"{name} is a {role.lower()} at the school.",
+        "description":
+            description or
+            f"{name} is a {role.lower()} at the school.",
         "traits": [
-            clean_text(t)
-            for t in traits
-            if clean_text(t)
+            clean_text(x)
+            for x in traits
+            if clean_text(x)
         ],
         "memory": [],
         "conversation": []
@@ -542,43 +741,11 @@ def create_character():
 
     data["characters"].append(character)
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
         "character": character
-    })
-
-
-# ============================================================
-# TRAVEL
-# ============================================================
-
-@app.route("/world/travel", methods=["POST"])
-def travel():
-    body = request.get_json(silent=True) or {}
-
-    location = clean_text(body.get("location"))
-
-    if location not in data["locations"]:
-        return jsonify({
-            "error": "Unknown location."
-        }), 400
-
-    old = data["player_location"]
-
-    if old != location:
-        data["player_location"] = location
-
-        add_world_memory(
-            f"The player traveled from {old} to {location}."
-        )
-
-    save_data()
-
-    return jsonify({
-        "success": True,
-        "location": location
     })
 
 
@@ -588,9 +755,13 @@ def travel():
 
 @app.route("/world/advance", methods=["POST"])
 def world_advance():
+
     if len(data["characters"]) < 2:
+
         return jsonify({
-            "event": "Not enough characters."
+            "event":
+                "There are not enough characters "
+                "for a background interaction."
         })
 
     first, second = random.sample(
@@ -598,92 +769,163 @@ def world_advance():
         2
     )
 
-    location = random.choice(data["locations"])
+    location = random.choice(
+        data["locations"]
+    )
 
-    # Local fallback interaction.
-    interaction_templates = [
-        (
-            f"{first['name']} and {second['name']} ran into each other "
-            f"in the {location}. They talked for a while, with "
-            f"{first['name']} being {first['traits'][0].lower() if first.get('traits') else 'casual'} "
-            f"while {second['name']} responded in their own way."
-        ),
-        (
-            f"In the {location}, {first['name']} and {second['name']} "
-            f"ended up talking about school. The conversation was "
-            f"surprisingly interesting, and neither of them seemed "
-            f"ready to leave immediately."
-        ),
-        (
-            f"{first['name']} noticed {second['name']} in the {location} "
-            f"and started a conversation. They joked around for a bit "
-            f"before eventually going their separate ways."
-        ),
-        (
-            f"{first['name']} and {second['name']} disagreed about "
-            f"something in the {location}. Neither completely changed "
-            f"their mind, but the conversation gave both of them "
-            f"something to think about."
-        )
-    ]
+    system_prompt = f"""
+Generate a background event in a living school world.
 
-    event_text = random.choice(interaction_templates)
+Character A:
+{first["name"]}
 
-    event = {
+Personality:
+{first["personality"]}
+
+Character B:
+{second["name"]}
+
+Personality:
+{second["personality"]}
+
+Location:
+{location}
+
+Their interaction should feel natural.
+
+Possible events include:
+
+- joking
+- studying
+- arguing
+- gossiping
+- helping each other
+- misunderstanding
+- planning something
+- discussing another student
+- competition
+- friendship
+- awkward conversation
+- ordinary school life
+
+Do not make every event dramatic.
+
+Keep it around 3-7 sentences.
+
+Do not control the player.
+"""
+
+    event = call_ai(
+        system_prompt,
+        [],
+        temperature=0.9,
+        max_tokens=400
+    )
+
+    if event.startswith("AI_ERROR:"):
+
+        return jsonify({
+            "error": event
+        }), 500
+
+    background = {
         "characters": [
             first["name"],
             second["name"]
         ],
         "location": location,
-        "event": event_text,
+        "event": event,
         "time": datetime.utcnow().isoformat()
     }
 
-    data["background_events"].append(event)
+    data["background_events"].append(background)
 
-    data["background_events"] = trim(
+    data["background_events"] = trim_memory(
         data["background_events"],
         50
     )
 
     remember(
         first,
-        f"I interacted with {second['name']} at {location}."
+        f"{second['name']} and I interacted "
+        f"at {location}: {event[:220]}"
     )
 
     remember(
         second,
-        f"I interacted with {first['name']} at {location}."
+        f"I interacted with {first['name']} "
+        f"at {location}: {event[:220]}"
     )
 
     add_world_memory(
-        f"{first['name']} and {second['name']} interacted at {location}."
+        f"{first['name']} and {second['name']} "
+        f"interacted at {location}."
     )
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
-        "event": event
+        "event": background
     })
 
 
 # ============================================================
-# WORLD RESET
+# TRAVEL
+# ============================================================
+
+@app.route("/world/travel", methods=["POST"])
+def travel():
+
+    body = request.get_json(silent=True) or {}
+
+    location = clean_text(
+        body.get("location")
+    )
+
+    if location not in data["locations"]:
+
+        return jsonify({
+            "error": "Unknown location."
+        }), 400
+
+    old_location = data["player_location"]
+
+    data["player_location"] = location
+
+    add_world_memory(
+        f"Player traveled from "
+        f"{old_location} to {location}."
+    )
+
+    save_data(data)
+
+    return jsonify({
+        "success": True,
+        "location": location
+    })
+
+
+# ============================================================
+# RESET WORLD
 # ============================================================
 
 @app.route("/world/reset", methods=["POST"])
 def reset_world():
+
     global data
 
-    old_number = data["world_number"]
+    old_world = data["world_number"]
 
     new_data = default_data()
 
-    new_data["world_number"] = old_number + 1
-    new_data["world_id"] = random.randint(100000, 999999)
+    new_data["world_number"] = old_world + 1
 
-    # Completely new story seed.
+    new_data["world_id"] = random.randint(
+        100000,
+        999999
+    )
+
     new_data["story"]["story_id"] = random.randint(
         100000,
         999999
@@ -691,634 +933,210 @@ def reset_world():
 
     data = new_data
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
         "world_number": data["world_number"],
         "world_id": data["world_id"],
-        "message": "New universe created."
+        "message":
+            "World reset. All character memories, "
+            "world memories, conversations, and "
+            "story progression were cleared."
     })
 
 
 # ============================================================
-# ============================================================
-# LOCAL STORY ENGINE
-# ============================================================
-# This section DOES NOT call OpenRouter.
-# Therefore Story Mode costs ZERO API credits.
-# ============================================================
+# STORY THEMES
 # ============================================================
 
-STORY_SCENARIOS = [
-    {
-        "title": "The Door Beneath the School",
-        "theme": "A strange door appears beneath the school.",
-        "intro": "During an ordinary school day, you notice a hallway that seems different from yesterday. At the end is a door nobody remembers seeing.",
-        "mystery": "The door appears to react to decisions made by students.",
-        "special": "The doorway may connect this school to another version of reality."
-    },
-    {
-        "title": "The Missing Afternoon",
-        "theme": "An entire afternoon seems to have disappeared from everyone's memory.",
-        "intro": "The school day starts normally, but several students insist that something happened during a period nobody can remember.",
-        "mystery": "A few students remember different versions of the same afternoon.",
-        "special": "The missing time may belong to another universe."
-    },
-    {
-        "title": "The Other School",
-        "theme": "A second version of the school appears.",
-        "intro": "You glance through a classroom window and see the same school across the courtyard—but the people inside are different.",
-        "mystery": "The other school appears to exist in a parallel world.",
-        "special": "Something from that world is slowly crossing over."
-    },
-    {
-        "title": "The Signal",
-        "theme": "A mysterious signal begins affecting the school.",
-        "intro": "Every computer in the school suddenly displays the same strange symbol.",
-        "mystery": "The signal seems to predict events before they happen.",
-        "special": "The signal may be coming from another version of Earth."
-    }
+STORY_THEMES = [
+    "A mysterious event happens at school.",
+    "A strange discovery changes an ordinary school day.",
+    "A friendship begins to fall apart.",
+    "A hidden secret about the school is discovered.",
+    "A competition becomes much more serious than expected.",
+    "An ordinary day slowly turns into something nobody expected.",
+    "A student disappears from class and several people know something.",
+    "A strange object is discovered inside the school.",
+    "A school event goes completely wrong.",
+    "A rumor spreads through the school and changes everyone's behavior.",
+    "A new student arrives and seems to know something about the school.",
+    "Something strange keeps happening at the same time every day.",
+    "Two students discover that their memories of an event do not match.",
+    "A school project uncovers something nobody was supposed to find."
 ]
 
 
-def make_choice(a, b, c, d, next_a, next_b, next_c, next_d):
-    return [
-        {"id": "A", "text": a, "next": next_a},
-        {"id": "B", "text": b, "next": next_b},
-        {"id": "C", "text": c, "next": next_c},
-        {"id": "D", "text": d, "next": next_d}
-    ]
+# ============================================================
+# STORY GENERATOR
+# ============================================================
 
+def generate_story():
 
-def build_local_story():
-    """
-    Builds a different story tree every time.
+    theme = random.choice(
+        STORY_THEMES
+    )
 
-    The structure is intentionally generated with random variations,
-    while still guaranteeing six possible endings.
-    """
+    world_seed = random.randint(
+        100000,
+        999999999
+    )
 
-    scenario = random.choice(STORY_SCENARIOS)
-
-    names = [
-        c["name"]
+    character_info = [
+        {
+            "name": c["name"],
+            "role": c["role"],
+            "personality": c["personality"]
+        }
         for c in data["characters"]
     ]
 
-    random.shuffle(names)
+    story_system = f"""
+Create a completely original branching interactive
+school story.
 
-    while len(names) < 4:
-        names.append("another student")
+WORLD SEED:
+{world_seed}
 
-    a, b, c, d = names[:4]
+THEME:
+{theme}
 
-    # Random story details make each new world different.
-    object_names = [
-        "a cracked phone",
-        "an old school key",
-        "a glowing notebook",
-        "a strange USB drive",
-        "a locked metal box",
-        "a photograph from tomorrow"
-    ]
+AVAILABLE CHARACTERS:
+{json.dumps(character_info, ensure_ascii=False)}
 
-    locations = data["locations"]
+The story should feel like a choice-driven narrative game.
 
-    special_object = random.choice(object_names)
+IMPORTANT:
 
-    loc1 = random.choice(locations)
-    loc2 = random.choice(locations)
-    loc3 = random.choice(locations)
+The world seed means this story must be substantially
+different from stories generated in other worlds.
 
-    # --------------------------------------------------------
-    # ENDINGS
-    # --------------------------------------------------------
+Requirements:
 
-    endings = [
-        {
-            "id": "ending_1",
-            "title": "The Quiet Escape",
-            "text": f"You stop the mystery from spreading. {a} helps you keep the discovery secret, and the school returns to normal. Nobody ever learns how close the world came to changing."
-        },
-        {
-            "id": "ending_2",
-            "title": "The Worlds Collide",
-            "text": f"The boundary between realities breaks. Students from another version of the school appear, and the two worlds become connected. The school will never be the same."
-        },
-        {
-            "id": "ending_3",
-            "title": "The Truth Revealed",
-            "text": f"You expose the mystery to everyone. {b} helps piece together the evidence, and the entire school learns that reality is far stranger than anyone imagined."
-        },
-        {
-            "id": "ending_4",
-            "title": "The Sacrifice",
-            "text": f"You choose to close the phenomenon permanently. The school survives, but the evidence—and one important memory—vanishes forever."
-        },
-        {
-            "id": "ending_5",
-            "title": "The New Timeline",
-            "text": f"Your decisions create a completely different timeline. When the school day ends, you realize that several small details about your world have changed."
-        },
-        {
-            "id": "ending_6",
-            "title": "Beyond the Door",
-            "text": f"You step through the phenomenon instead of closing it. On the other side is another school, another world, and another version of yourself waiting."
-        }
-    ]
+- At least 5 major endings.
+- Prefer 6-8 endings if possible.
+- 16-25 meaningful story nodes.
+- Multiple branches.
+- Choices must affect future events.
+- Choices must affect relationships.
+- Choices can affect trust.
+- Choices can affect information.
+- Choices can affect locations.
+- Choices can affect which characters help the player.
+- Choices can cause characters to distrust the player.
+- Choices can unlock or block later events.
+- Some branches should stay separate.
+- Do NOT reconnect every branch immediately.
+- The player gets exactly four choices:
+  A
+  B
+  C
+  D
+- Each choice must have consequences.
+- Choices should not have obvious good/bad labels.
+- The story should include normal school moments.
+- Characters should act according to their personalities.
+- The player should never know which choice leads
+  to which ending.
+- Some endings should be positive.
+- Some endings should be negative.
+- Some endings should be bittersweet.
+- Some endings should reveal secrets.
+- Some endings should depend on earlier choices.
+- The story should feel like one evolving timeline.
+- Do not copy any existing copyrighted game story.
 
-    nodes = {}
+Return ONLY valid JSON.
 
-    # --------------------------------------------------------
-    # START
-    # --------------------------------------------------------
+Use this exact general structure:
 
-    nodes["start"] = {
-        "title": scenario["title"],
-        "text": (
-            f"{scenario['intro']} "
-            f"{scenario['mystery']} "
-            f"You are near {loc1}. {a} is nearby when you notice {special_object}."
-        ),
-        "choices": make_choice(
-            "Investigate the strange object.",
-            "Ask Alex what they saw.",
-            "Leave and investigate the hallway.",
-            "Tell Maya about the discovery.",
-            "investigate",
-            "alex",
-            "hallway",
-            "maya"
-        )
-    }
+{{
+  "title": "Story title",
+  "theme": "Short theme",
+  "start": "start",
+  "nodes": {{
+    "start": {{
+      "title": "Scene title",
+      "text": "Scene description",
+      "choices": [
+        {{
+          "id": "A",
+          "text": "Choice text",
+          "next": "node_id"
+        }},
+        {{
+          "id": "B",
+          "text": "Choice text",
+          "next": "node_id"
+        }},
+        {{
+          "id": "C",
+          "text": "Choice text",
+          "next": "node_id"
+        }},
+        {{
+          "id": "D",
+          "text": "Choice text",
+          "next": "node_id"
+        }}
+      ]
+    }}
+  }},
+  "endings": [
+    {{
+      "id": "ending_1",
+      "title": "Ending title",
+      "text": "Ending description"
+    }}
+  ]
+}}
 
-    # --------------------------------------------------------
-    # FIRST BRANCH
-    # --------------------------------------------------------
+Every choice's "next" MUST refer to:
 
-    nodes["investigate"] = {
-        "title": "The Discovery",
-        "text": (
-            f"You examine {special_object}. Something about it feels "
-            f"wrong. The object briefly displays a message that should "
-            f"not be possible."
-        ),
-        "choices": make_choice(
-            "Take the object.",
-            "Leave it where it is.",
-            "Show it to Sam.",
-            "Destroy it.",
-            "take_object",
-            "leave_object",
-            "sam",
-            "destroy_object"
-        )
-    }
+1. another existing node ID
 
-    nodes["alex"] = {
-        "title": "Alex Saw Something",
-        "text": (
-            f"{a} looks nervous. They tell you they saw someone "
-            f"walking through the hallway who looked exactly like "
-            f"{a}, but they disappeared before anyone else noticed."
-        ),
-        "choices": make_choice(
-            "Believe them.",
-            "Ask for proof.",
-            "Search for the person.",
-            "Tell them to forget it.",
-            "believe",
-            "proof",
-            "search_person",
-            "forget"
-        )
-    }
+OR
 
-    nodes["hallway"] = {
-        "title": "The Empty Hallway",
-        "text": (
-            f"You enter the hallway. The lights flicker, and for a "
-            f"moment the hallway looks completely different. A sound "
-            f"comes from {loc2}."
-        ),
-        "choices": make_choice(
-            "Follow the sound.",
-            "Return to class.",
-            "Call Jordan.",
-            "Enter {0}.".format(loc2),
-            "sound",
-            "return_class",
-            "jordan",
-            "location_two"
-        )
-    }
+2. an ending ID.
 
-    nodes["maya"] = {
-        "title": "Maya's Theory",
-        "text": (
-            f"{b} listens carefully. Instead of laughing, {b} says "
-            f"the evidence looks like a repeating pattern. "
-            f"They think the school might be experiencing "
-            f"something that happened before."
-        ),
-        "choices": make_choice(
-            "Trust Maya.",
-            "Ask for more evidence.",
-            "Investigate alone.",
-            "Tell another student.",
-            "trust_maya",
-            "maya_evidence",
-            "alone",
-            "tell_student"
-        )
-    }
+Do not create broken links.
 
-    # --------------------------------------------------------
-    # SECOND LEVEL
-    # --------------------------------------------------------
+Every non-ending node must contain exactly
+four choices: A, B, C, D.
 
-    nodes["take_object"] = {
-        "title": "The Object Reacts",
-        "text": (
-            f"The moment you pick up {special_object}, every clock "
-            f"nearby changes by several minutes. You hear a voice "
-            f"coming from somewhere that sounds like the school—but "
-            f"not your school."
-        ),
-        "choices": make_choice(
-            "Answer the voice.",
-            "Run to the library.",
-            "Give the object to Maya.",
-            "Turn it off.",
-            "voice",
-            "library",
-            "object_maya",
-            "turn_off"
-        )
-    }
+Make the story complete from beginning to end.
+"""
 
-    nodes["leave_object"] = {
-        "title": "Walking Away",
-        "text": (
-            "You leave the object behind. Unfortunately, someone else "
-            "finds it. A few minutes later, the school begins behaving "
-            "strangely."
-        ),
-        "choices": make_choice(
-            "Find who took it.",
-            "Warn the teachers.",
-            "Stay out of it.",
-            "Search the cameras.",
-            "find_taker",
-            "teachers",
-            "stay_out",
-            "cameras"
-        )
-    }
+    response = call_ai(
+        story_system,
+        [],
+        temperature=1.0,
+        max_tokens=7000
+    )
 
-    nodes["sam"] = {
-        "title": "Sam's Drawing",
-        "text": (
-            f"Sam studies the object and quietly shows you a drawing "
-            f"they made yesterday. It shows the exact same thing."
-        ),
-        "choices": make_choice(
-            "Ask Sam how they knew.",
-            "Follow Sam.",
-            "Keep the drawing.",
-            "Destroy the drawing.",
-            "sam_truth",
-            "follow_sam",
-            "keep_drawing",
-            "destroy_drawing"
-        )
-    }
+    if response.startswith("AI_ERROR:"):
+        return None, response
 
-    nodes["destroy_object"] = {
-        "title": "Breaking the Pattern",
-        "text": (
-            "You destroy the object. For a moment everything seems "
-            "normal. Then every screen in the school displays the "
-            "same message: YOU CHANGED THE STORY."
-        ),
-        "choices": make_choice(
-            "Investigate the message.",
-            "Ignore it.",
-            "Tell everyone.",
-            "Find the source.",
-            "message",
-            "ignore_message",
-            "public_truth",
-            "source"
-        )
-    }
+    parsed = safe_json_from_ai(response)
 
-    nodes["believe"] = {
-        "title": "The Double",
-        "text": (
-            f"{a} takes you toward {loc2}. Someone is standing at the "
-            f"far end of the hallway. They look exactly like {a}."
-        ),
-        "choices": make_choice(
-            "Approach them.",
-            "Hide.",
-            "Call Maya.",
-            "Leave the school.",
-            "approach_double",
-            "hide_double",
-            "call_maya",
-            "leave_school"
-        )
-    }
+    if not parsed:
 
-    nodes["proof"] = {
-        "title": "Proof",
-        "text": (
-            f"{a} shows you a photograph. In the background is "
-            f"a version of the school that doesn't exist."
-        ),
-        "choices": make_choice(
-            "Study the photograph.",
-            "Delete it.",
-            "Show Maya.",
-            "Show Jordan.",
-            "photo",
-            "delete_photo",
-            "photo_maya",
-            "photo_jordan"
-        )
-    }
-
-    nodes["search_person"] = {
-        "title": "Searching",
-        "text": (
-            f"You search {loc2}. Nobody is there. Then you hear your "
-            f"own voice coming from an empty classroom."
-        ),
-        "choices": make_choice(
-            "Enter the classroom.",
-            "Run.",
-            "Call Sam.",
-            "Answer your own voice.",
-            "voice_room",
-            "run",
-            "call_sam",
-            "answer_self"
-        )
-    }
-
-    nodes["forget"] = {
-        "title": "Ignoring the Warning",
-        "text": (
-            "You decide to forget what happened. The rest of the day "
-            "seems normal until you notice that one of your classmates "
-            "has completely disappeared from everyone's memories."
-        ),
-        "choices": make_choice(
-            "Find the missing memory.",
-            "Ask Maya.",
-            "Ask a teacher.",
-            "Accept it.",
-            "memory",
-            "memory_maya",
-            "memory_teacher",
-            "accept"
-        )
-    }
-
-    # --------------------------------------------------------
-    # MORE BRANCHES
-    # --------------------------------------------------------
-
-    extra_nodes = {
-        "voice": ("The Voice", "A voice from another reality answers your question."),
-        "library": ("The Library", "The library contains a book describing today's events."),
-        "object_maya": ("Maya Gets the Object", "Maya realizes the object reacts to decisions."),
-        "turn_off": ("Silence", "You turn the object off, but something else turns on."),
-        "find_taker": ("The Search", "You discover the object was taken toward the gym."),
-        "teachers": ("The Teachers", "The adults don't believe you until the lights change."),
-        "stay_out": ("Staying Out", "You avoid the mystery, but it follows you anyway."),
-        "cameras": ("The Cameras", "The security footage shows two different versions of the same hallway."),
-        "sam_truth": ("Sam's Secret", "Sam admits the drawing came from a dream that keeps repeating."),
-        "follow_sam": ("Following Sam", "Sam leads you toward a place beneath the school."),
-        "keep_drawing": ("The Drawing", "The drawing changes while you watch."),
-        "destroy_drawing": ("Erasing Evidence", "Destroying the drawing causes the memory to disappear."),
-        "message": ("The Message", "The message predicts your next decision."),
-        "ignore_message": ("Ignoring It", "Ignoring the message causes another reality to notice you."),
-        "public_truth": ("Everyone Knows", "The entire school sees evidence of the multiverse."),
-        "source": ("The Source", "You find where the signal originates."),
-        "approach_double": ("The Other Student", "The double claims they came from another world."),
-        "hide_double": ("Hiding", "You stay hidden while the double searches for you."),
-        "call_maya": ("Maya Arrives", "Maya immediately realizes what the double is."),
-        "leave_school": ("Leaving", "You leave the school, but the strange world follows."),
-        "photo": ("The Photograph", "The photograph changes when you make a decision."),
-        "delete_photo": ("Deleting the Evidence", "The photograph disappears from reality."),
-        "photo_maya": ("Maya Sees It", "Maya recognizes a building from another timeline."),
-        "photo_jordan": ("Jordan's Reaction", "Jordan believes you and wants to investigate."),
-        "voice_room": ("The Classroom", "You find another version of yourself."),
-        "run": ("Running", "You run, but the hallway keeps repeating."),
-        "call_sam": ("Sam's Help", "Sam says they have seen this before."),
-        "answer_self": ("The Other You", "The voice tells you that your choices are changing worlds."),
-        "memory": ("The Missing Memory", "You discover someone has been removed from reality."),
-        "memory_maya": ("Maya Remembers", "Maya remembers something nobody else can."),
-        "memory_teacher": ("The Teacher", "A teacher admits this has happened before."),
-        "accept": ("Acceptance", "You accept the strange world and watch reality settle.")
-    }
-
-    # Connect every extra node to endings.
-    ending_ids = [e["id"] for e in endings]
-
-    for index, (node_id, info) in enumerate(extra_nodes.items()):
-        title, text = info
-
-        choices = make_choice(
-            "Keep investigating.",
-            "Trust the person beside you.",
-            "Take a dangerous shortcut.",
-            "Walk away.",
-            ending_ids[index % 6],
-            ending_ids[(index + 1) % 6],
-            ending_ids[(index + 2) % 6],
-            ending_ids[(index + 3) % 6]
+        return None, (
+            "AI_ERROR: The model returned invalid story JSON."
         )
 
-        nodes[node_id] = {
-            "title": title,
-            "text": text,
-            "choices": choices
-        }
+    if "nodes" not in parsed:
 
-    # Add a few special longer paths.
-    nodes["trust_maya"] = {
-        "title": "Trust",
-        "text": f"Maya leads you toward {loc3}. She believes the answer is hidden there.",
-        "choices": make_choice(
-            "Follow her.",
-            "Ask Jordan to come.",
-            "Go alone.",
-            "Turn back.",
-            "follow_maya",
-            "jordan_help",
-            "alone_deep",
-            "ending_1"
+        return None, (
+            "AI_ERROR: Story JSON did not contain nodes."
         )
-    }
 
-    nodes["maya_evidence"] = {
-        "title": "More Evidence",
-        "text": "Maya shows you several details that seem impossible to explain.",
-        "choices": make_choice(
-            "Believe her.",
-            "Challenge the theory.",
-            "Look for another explanation.",
-            "Show everyone.",
-            "follow_maya",
-            "ending_3",
-            "ending_5",
-            "public_truth"
-        )
-    }
+    if "endings" not in parsed:
 
-    nodes["alone"] = {
-        "title": "Alone",
-        "text": "You investigate without telling anyone. The mystery becomes more dangerous.",
-        "choices": make_choice(
-            "Continue.",
-            "Stop.",
-            "Search the library.",
-            "Go underground.",
-            "alone_deep",
-            "ending_1",
-            "library",
-            "follow_sam"
-        )
-    }
+        parsed["endings"] = []
 
-    nodes["tell_student"] = {
-        "title": "The Warning Spreads",
-        "text": "You tell another student. Within minutes, the rumor spreads across the school.",
-        "choices": make_choice(
-            "Tell everyone.",
-            "Stop the rumor.",
-            "Use the rumor as a distraction.",
-            "Find the source.",
-            "public_truth",
-            "ending_1",
-            "ending_5",
-            "source"
-        )
-    }
-
-    nodes["jordan"] = {
-        "title": "Jordan Joins",
-        "text": "Jordan arrives and immediately treats the mystery like a challenge.",
-        "choices": make_choice(
-            "Let Jordan lead.",
-            "Work together.",
-            "Challenge Jordan.",
-            "Leave Jordan behind.",
-            "jordan_help",
-            "ending_3",
-            "ending_5",
-            "ending_1"
-        )
-    }
-
-    nodes["return_class"] = {
-        "title": "Back to Class",
-        "text": "You return to class. Everything seems normal until your teacher calls you by a name you don't recognize.",
-        "choices": make_choice(
-            "Correct them.",
-            "Say nothing.",
-            "Ask about the name.",
-            "Leave the classroom.",
-            "ending_5",
-            "ending_1",
-            "memory_teacher",
-            "hallway"
-        )
-    }
-
-    nodes["location_two"] = {
-        "title": loc2,
-        "text": f"You enter {loc2} and find a strange symbol carved into the wall.",
-        "choices": make_choice(
-            "Touch the symbol.",
-            "Photograph it.",
-            "Call Maya.",
-            "Walk away.",
-            "ending_6",
-            "photo",
-            "call_maya",
-            "ending_1"
-        )
-    }
-
-    nodes["follow_maya"] = {
-        "title": "The Hidden Room",
-        "text": f"Maya leads you beneath {loc3}. A hidden room contains evidence of several different school timelines.",
-        "choices": make_choice(
-            "Open the portal.",
-            "Close the portal.",
-            "Study the timelines.",
-            "Destroy the machine.",
-            "ending_6",
-            "ending_4",
-            "ending_3",
-            "ending_5"
-        )
-    }
-
-    nodes["jordan_help"] = {
-        "title": "The Team",
-        "text": "Jordan gathers a small group of students. For the first time, everyone works together.",
-        "choices": make_choice(
-            "Enter the anomaly.",
-            "Protect the school.",
-            "Expose everything.",
-            "Let the anomaly decide.",
-            "ending_6",
-            "ending_1",
-            "ending_3",
-            "ending_2"
-        )
-    }
-
-    nodes["alone_deep"] = {
-        "title": "Beneath the School",
-        "text": "You find a machine that appears to be watching every choice you have made.",
-        "choices": make_choice(
-            "Shut it down.",
-            "Use it.",
-            "Destroy it.",
-            "Step inside it.",
-            "ending_4",
-            "ending_5",
-            "ending_1",
-            "ending_6"
-        )
-    }
-
-    # --------------------------------------------------------
-    # ENDINGS ARE INCLUDED IN TREE FOR DISPLAY
-    # --------------------------------------------------------
-
-    for ending in endings:
-        nodes[ending["id"]] = {
-            "title": ending["title"],
-            "text": ending["text"],
-            "ending": True,
-            "choices": []
-        }
-
-    return {
-        "title": scenario["title"],
-        "theme": scenario["theme"],
-        "start": "start",
-        "nodes": nodes,
-        "endings": endings
-    }
+    return parsed, None
 
 
 # ============================================================
@@ -1327,26 +1145,66 @@ def build_local_story():
 
 @app.route("/story/start", methods=["POST"])
 def story_start():
-    # LOCAL GENERATION ONLY
-    story = build_local_story()
+
+    story, error = generate_story()
+
+    if error:
+
+        return jsonify({
+            "error": error
+        }), 500
+
+    if not story:
+
+        return jsonify({
+            "error":
+                "Story generator returned no story."
+        }), 500
+
+    start_node = story.get(
+        "start",
+        "start"
+    )
 
     data["story"] = {
         "active": True,
-        "story_id": random.randint(100000, 999999),
-        "title": story["title"],
-        "theme": story["theme"],
-        "current_node": story["start"],
+
+        "story_id": random.randint(
+            100000,
+            999999
+        ),
+
+        "title":
+            story.get(
+                "title",
+                "Untitled Story"
+            ),
+
+        "theme":
+            story.get(
+                "theme",
+                ""
+            ),
+
+        "current_node": start_node,
+
         "history": [],
-        "seen_nodes": ["start"],
+
+        "seen_nodes": [
+            start_node
+        ],
+
         "ending": None,
+
         "tree": story
     }
 
     add_world_memory(
-        f"Started story: {story['title']}"
+        f"Story started: "
+        f"{data['story']['title']}"
     )
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
@@ -1360,73 +1218,111 @@ def story_start():
 
 @app.route("/story/choose", methods=["POST"])
 def story_choose():
+
     body = request.get_json(silent=True) or {}
 
-    choice_id = clean_text(body.get("choice"))
+    choice_id = clean_text(
+        body.get("choice")
+    ).upper()
 
     if not data["story"]["active"]:
+
         return jsonify({
-            "error": "There is no active story."
+            "error": "No active story."
         }), 400
 
     story = data["story"]["tree"]
 
     current_id = data["story"]["current_node"]
 
-    node = story.get("nodes", {}).get(current_id)
+    node = story.get(
+        "nodes",
+        {}
+    ).get(current_id)
 
     if not node:
+
         return jsonify({
-            "error": "Current story node not found."
+            "error":
+                f"Story node '{current_id}' not found."
         }), 404
 
     choice = None
 
-    for option in node.get("choices", []):
-        if option.get("id") == choice_id:
-            choice = option
+    for item in node.get("choices", []):
+
+        if str(
+            item.get("id", "")
+        ).upper() == choice_id:
+
+            choice = item
             break
 
     if not choice:
+
         return jsonify({
-            "error": "Invalid choice."
+            "error":
+                "Invalid choice. Choose A, B, C, or D."
         }), 400
 
-    next_id = choice["next"]
+    next_id = choice.get("next")
+
+    if not next_id:
+
+        return jsonify({
+            "error":
+                "This choice has no destination."
+        }), 500
 
     data["story"]["history"].append({
         "node": current_id,
         "choice": choice_id,
-        "choice_text": choice.get("text", ""),
+        "choice_text":
+            choice.get(
+                "text",
+                ""
+            ),
         "next": next_id
     })
 
     data["story"]["current_node"] = next_id
 
     if next_id not in data["story"]["seen_nodes"]:
-        data["story"]["seen_nodes"].append(next_id)
 
-    next_node = story.get("nodes", {}).get(next_id)
+        data["story"]["seen_nodes"].append(
+            next_id
+        )
 
-    if next_node and next_node.get("ending"):
-        data["story"]["ending"] = {
-            "id": next_id,
-            "title": next_node["title"],
-            "text": next_node["text"]
-        }
+    ending = None
+
+    for item in story.get(
+        "endings",
+        []
+    ):
+
+        if item.get("id") == next_id:
+
+            ending = item
+            break
+
+    if ending:
+
+        data["story"]["ending"] = ending
 
         data["story"]["active"] = False
 
         add_world_memory(
-            f"Story ending reached: {next_node['title']}"
+            f"Story ended: "
+            f"{ending.get('title', 'Unknown ending')}"
         )
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
-        "story": data["story"],
-        "node": next_node
+        "current_node": next_id,
+        "ending": ending,
+        "story": data["story"]
     })
 
 
@@ -1436,79 +1332,73 @@ def story_choose():
 
 @app.route("/story/tree", methods=["GET"])
 def story_tree():
-    story = data["story"]
-
-    return jsonify({
-        "title": story["title"],
-        "theme": story["theme"],
-        "tree": story["tree"],
-        "seen_nodes": story["seen_nodes"],
-        "history": story["history"],
-        "ending": story["ending"],
-        "active": story["active"]
-    })
-
-
-# ============================================================
-# REPLAY CURRENT WORLD
-# ============================================================
-
-@app.route("/story/replay", methods=["POST"])
-def replay_story():
-    if not data["story"].get("tree"):
-        return jsonify({
-            "error": "There is no story to replay."
-        }), 400
 
     story = data["story"]["tree"]
 
-    data["story"] = {
-        "active": True,
-        "story_id": random.randint(100000, 999999),
-        "title": story.get("title", "Story"),
-        "theme": story.get("theme", ""),
-        "current_node": story.get("start", "start"),
-        "history": [],
-        "seen_nodes": [story.get("start", "start")],
-        "ending": None,
-        "tree": story
-    }
-
-    save_data()
-
     return jsonify({
-        "success": True,
-        "story": data["story"]
+        "title":
+            data["story"]["title"],
+
+        "theme":
+            data["story"]["theme"],
+
+        "tree":
+            story,
+
+        "seen_nodes":
+            data["story"]["seen_nodes"],
+
+        "history":
+            data["story"]["history"],
+
+        "current_node":
+            data["story"]["current_node"],
+
+        "ending":
+            data["story"]["ending"],
+
+        "active":
+            data["story"]["active"]
     })
 
 
 # ============================================================
-# SELF IMPROVEMENT
+# IMPROVEMENT SYSTEM
 # ============================================================
 
 @app.route("/improvement", methods=["GET"])
 def get_improvement():
-    return jsonify(data["improvement"])
+
+    return jsonify(
+        data["improvement"]
+    )
 
 
 @app.route("/improvement/learn", methods=["POST"])
 def improvement_learn():
+
     body = request.get_json(silent=True) or {}
 
-    lesson = clean_text(body.get("lesson"))
+    lesson = clean_text(
+        body.get("lesson")
+    )
 
     if not lesson:
+
         return jsonify({
             "error": "Lesson is required."
         }), 400
 
-    add_improvement(lesson)
+    add_improvement(
+        lesson
+    )
 
-    save_data()
+    save_data(data)
 
     return jsonify({
         "success": True,
-        "improvement": data["improvement"]
+        "improvement":
+            data["improvement"]
     })
 
 
@@ -1518,12 +1408,15 @@ def improvement_learn():
 
 @app.route("/health", methods=["GET"])
 def health():
+
     return jsonify({
         "status": "ok",
-        "ai_configured": bool(API_KEY),
-        "model": MODEL,
-        "story_mode": "local",
-        "world": data["world_number"]
+        "ai_configured":
+            bool(API_KEY),
+        "models":
+            FREE_MODELS,
+        "world":
+            data["world_number"]
     })
 
 
@@ -1532,7 +1425,13 @@ def health():
 # ============================================================
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
+
+    port = int(
+        os.getenv(
+            "PORT",
+            "5000"
+        )
+    )
 
     app.run(
         host="0.0.0.0",
