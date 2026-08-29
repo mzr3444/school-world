@@ -3,10 +3,11 @@ import json
 import random
 import re
 from datetime import datetime
-def clean_text(text):
-    if text is None:
-        return ""
-    return str(text).strip()
+def clean_text(value, fallback=""):
+    if value is None:
+        return fallback
+    text = str(value).strip()
+    return text if text else fallback
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 
