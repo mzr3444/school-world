@@ -15,13 +15,14 @@ body {
     margin: 0;
     font-family: Arial, Helvetica, sans-serif;
     background: #10131a;
-    color: #f2f4f8;
+    color: #f2f2f2;
     height: 100vh;
     overflow: hidden;
 }
 
 button,
-input {
+input,
+textarea {
     font: inherit;
 }
 
@@ -30,121 +31,112 @@ button {
 }
 
 .app {
-    display: grid;
-    grid-template-columns: 250px 1fr;
     height: 100vh;
+    display: flex;
 }
 
-/* ================= SIDEBAR ================= */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 .sidebar {
+    width: 250px;
     background: #171b24;
-    border-right: 1px solid #303746;
+    border-right: 1px solid #303642;
+    display: flex;
+    flex-direction: column;
     padding: 18px;
-    overflow-y: auto;
 }
 
 .logo {
-    font-size: 23px;
+    font-size: 24px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
-.section-title {
-    color: #8993a7;
-    font-size: 12px;
-    text-transform: uppercase;
-    margin: 20px 0 8px;
-}
-
-.menu-button,
-.character-button {
+.menu-button {
     width: 100%;
+    padding: 13px;
+    margin-bottom: 8px;
     border: 0;
-    background: transparent;
-    color: #dce1ea;
-    padding: 11px;
-    border-radius: 9px;
+    border-radius: 10px;
+    background: #242a36;
+    color: white;
     text-align: left;
-    margin-bottom: 5px;
 }
 
-.menu-button:hover,
-.character-button:hover {
-    background: #252b38;
+.menu-button:hover {
+    background: #303746;
 }
 
-.character-button.active {
-    background: #30394b;
+.menu-button.active {
+    background: #465cff;
 }
 
 .world-info {
-    background: #11151d;
-    border: 1px solid #303746;
-    border-radius: 10px;
+    margin-top: auto;
     padding: 12px;
-    margin-top: 18px;
+    border-radius: 10px;
+    background: #202530;
     font-size: 13px;
-    color: #aeb7c7;
+    color: #bfc5d2;
 }
 
-.danger {
-    color: #ff8181;
-}
-
-/* ================= MAIN ================= */
+/* =========================================================
+   MAIN
+   ========================================================= */
 
 .main {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    min-width: 0;
 }
 
 .topbar {
     height: 64px;
-    border-bottom: 1px solid #303746;
+    border-bottom: 1px solid #303642;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 18px;
-    background: #151922;
+    padding: 0 22px;
+    background: #141820;
 }
 
-.title {
-    font-size: 18px;
+.location {
     font-weight: bold;
 }
 
-.top-actions {
-    display: flex;
-    gap: 8px;
+.status {
+    font-size: 13px;
+    color: #8d95a6;
 }
 
-.small-button {
-    background: #252c3a;
-    color: white;
-    border: 1px solid #3b4456;
-    padding: 8px 12px;
-    border-radius: 8px;
-}
-
-.small-button:hover {
-    background: #31394a;
-}
-
-.content {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-}
-
-/* ================= CHAT ================= */
+/* =========================================================
+   CHAT
+   ========================================================= */
 
 .chat-area {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    min-width: 0;
+}
+
+.character-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #292e38;
+}
+
+.character-name {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.character-description {
+    margin-top: 5px;
+    color: #9fa7b7;
+    font-size: 14px;
 }
 
 .messages {
@@ -154,284 +146,387 @@ button {
 }
 
 .message {
-    max-width: 780px;
-    margin: 0 auto 16px;
-    display: flex;
-}
-
-.message-inner {
-    padding: 14px 16px;
-    border-radius: 13px;
+    max-width: 760px;
+    margin-bottom: 18px;
+    padding: 14px 17px;
+    border-radius: 15px;
     line-height: 1.55;
     white-space: pre-wrap;
 }
 
 .message.user {
-    justify-content: flex-end;
-}
-
-.message.user .message-inner {
-    background: #34445d;
-    max-width: 70%;
+    margin-left: auto;
+    background: #465cff;
 }
 
 .message.ai {
-    justify-content: flex-start;
+    margin-right: auto;
+    background: #242a35;
 }
 
-.message.ai .message-inner {
-    background: #1d232e;
-    border: 1px solid #303746;
-    max-width: 80%;
+.message.system {
+    margin: 0 auto;
+    background: #1c212b;
+    color: #aeb5c3;
+    font-size: 13px;
 }
 
-.empty {
-    text-align: center;
-    color: #7f899b;
-    margin-top: 100px;
+/* =========================================================
+   COMPOSER
+   ========================================================= */
+
+.composer {
+    border-top: 1px solid #303642;
+    padding: 14px;
+    background: #141820;
 }
 
-/* ================= INPUT ================= */
-
-.input-area {
-    padding: 15px;
-    border-top: 1px solid #303746;
-    background: #151922;
-}
-
-.input-box {
-    max-width: 900px;
-    margin: auto;
+.composer-row {
     display: flex;
     gap: 10px;
 }
 
 #messageInput {
     flex: 1;
-    background: #0f131a;
+    resize: none;
+    min-height: 52px;
+    max-height: 150px;
+    border: 1px solid #3a414e;
+    background: #202530;
     color: white;
-    border: 1px solid #3a4353;
-    border-radius: 11px;
-    padding: 13px;
+    border-radius: 12px;
+    padding: 14px;
     outline: none;
 }
 
 #messageInput:focus {
-    border-color: #66748c;
+    border-color: #6575ff;
 }
 
-.send {
-    background: #435777;
-    color: white;
+.send-button {
+    width: 100px;
     border: 0;
-    border-radius: 11px;
-    padding: 0 20px;
+    border-radius: 12px;
+    background: #465cff;
+    color: white;
+    font-weight: bold;
 }
 
-.send:hover {
-    background: #526b92;
+.small-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
 }
 
-/* ================= STORY PANEL ================= */
+.small-button {
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #292f3a;
+    color: #cbd0db;
+}
 
-.story-panel {
-    width: 390px;
-    border-left: 1px solid #303746;
-    background: #131720;
+/* =========================================================
+   CHARACTER PANEL
+   ========================================================= */
+
+.panel {
+    position: absolute;
+    top: 64px;
+    right: 0;
+    bottom: 0;
+    width: 360px;
+    background: #171b24;
+    border-left: 1px solid #303642;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+    z-index: 20;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.panel.open {
+    transform: translateX(0);
+}
+
+.panel-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.character-card {
+    background: #222833;
+    border: 1px solid #323946;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.character-card h3 {
+    margin: 0 0 5px 0;
+}
+
+.character-card p {
+    color: #adb4c1;
+    font-size: 13px;
+}
+
+.traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.trait {
+    background: #303746;
+    color: #cbd2df;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+}
+
+.character-card button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 9px;
+    border: 0;
+    border-radius: 8px;
+    background: #465cff;
+    color: white;
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
     display: none;
-    flex-direction: column;
-    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
 }
 
-.story-panel.visible {
+.modal.show {
     display: flex;
 }
 
-.story-header {
-    padding: 16px;
-    border-bottom: 1px solid #303746;
+.modal-box {
+    width: min(500px, 92vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #1a1f29;
+    border: 1px solid #343b49;
+    border-radius: 15px;
+    padding: 22px;
+}
+
+.modal-box h2 {
+    margin-top: 0;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 11px;
+    border-radius: 9px;
+    border: 1px solid #3b4351;
+    background: #242a35;
+    color: white;
+    margin-bottom: 12px;
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.primary {
+    background: #465cff;
+    color: white;
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 15px;
+}
+
+.secondary {
+    background: #303642;
+    color: white;
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 15px;
+}
+
+/* =========================================================
+   STORY MODE FULL SCREEN
+   ========================================================= */
+
+.story-screen {
+    position: fixed;
+    inset: 0;
+    background: #0b0e14;
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+}
+
+.story-screen.show {
+    display: flex;
+}
+
+.story-top {
+    height: 68px;
+    border-bottom: 1px solid #303642;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: #11151d;
 }
 
 .story-title {
-    font-size: 18px;
+    font-size: 21px;
     font-weight: bold;
+}
+
+.story-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
 }
 
 .story-content {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 50px;
 }
 
 .story-scene {
-    background: #1b212c;
-    border: 1px solid #303746;
-    padding: 15px;
-    border-radius: 11px;
-    line-height: 1.5;
-    margin-bottom: 15px;
+    max-width: 950px;
+    margin: auto;
+}
+
+.story-scene-title {
+    font-size: 34px;
+    margin-bottom: 18px;
+}
+
+.story-text {
+    color: #d1d6df;
+    font-size: 17px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+}
+
+.choices {
+    margin-top: 35px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
 }
 
 .choice {
-    width: 100%;
-    text-align: left;
-    background: #222a38;
-    border: 1px solid #3a4558;
+    background: #202630;
+    border: 1px solid #38404e;
     color: white;
-    padding: 13px;
-    border-radius: 10px;
-    margin-bottom: 9px;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: left;
+    transition: .15s;
 }
 
 .choice:hover {
-    background: #303b4f;
+    background: #2b3240;
+    border-color: #5967ff;
 }
 
 .choice-label {
     font-weight: bold;
-    margin-right: 8px;
+    color: #7180ff;
+    margin-right: 7px;
 }
 
-.ending {
-    background: #292318;
-    border: 1px solid #80652e;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 10px;
+.story-side {
+    width: 300px;
+    border-left: 1px solid #303642;
+    padding: 20px;
+    overflow-y: auto;
+    background: #11151d;
 }
 
-/* ================= TREE ================= */
-
-.tree {
-    margin-top: 20px;
+.tree-title {
+    font-weight: bold;
+    margin-bottom: 15px;
 }
 
 .tree-node {
-    border-left: 2px solid #384354;
-    padding-left: 12px;
-    margin: 8px 0;
+    padding: 9px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: #202630;
+    font-size: 12px;
 }
 
 .tree-node.seen {
-    border-color: #6f91bd;
+    background: #293247;
+    border-left: 3px solid #6675ff;
+}
+
+.tree-node.current {
+    border: 1px solid #7380ff;
 }
 
 .tree-node.ending {
-    border-color: #c8a15a;
+    background: #26382e;
 }
 
-.tree-label {
-    font-size: 12px;
-    color: #9ba6b8;
+/* =========================================================
+   STORY ENDING
+   ========================================================= */
+
+.ending {
+    margin-top: 30px;
+    padding: 25px;
+    border: 1px solid #5967ff;
+    border-radius: 13px;
+    background: #181e2a;
 }
 
-.tree-hidden {
-    color: #626d7f;
-}
-
-.tree-seen {
-    color: #9dbbe5;
-}
-
-/* ================= PANELS ================= */
-
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.65);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-}
-
-.overlay.visible {
-    display: flex;
-}
-
-.modal {
-    width: min(700px, 90vw);
-    max-height: 85vh;
-    overflow-y: auto;
-    background: #181e28;
-    border: 1px solid #3b4557;
-    border-radius: 14px;
-    padding: 20px;
-}
-
-.modal h2 {
+.ending h2 {
     margin-top: 0;
 }
 
-.modal-button {
-    width: 100%;
-    background: #252d3b;
-    color: white;
-    border: 1px solid #3b4659;
-    border-radius: 9px;
-    padding: 11px;
-    margin-top: 8px;
-}
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
-.modal-button:hover {
-    background: #323d50;
-}
-
-.improvement {
-    padding: 11px;
-    background: #202632;
-    border-radius: 9px;
-    margin: 7px 0;
-}
-
-.interaction {
-    background: #1c222d;
-    border: 1px solid #303746;
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 10px;
-}
-
-.status {
-    font-size: 12px;
-    color: #7f8a9d;
-    margin-top: 6px;
-}
-
-@media (max-width: 900px) {
-    .app {
-        grid-template-columns: 190px 1fr;
-    }
-
-    .story-panel {
-        width: 320px;
-    }
-}
-
-@media (max-width: 700px) {
-    body {
-        overflow: auto;
-    }
-
-    .app {
-        display: block;
-        height: auto;
-        min-height: 100vh;
-    }
-
+@media (max-width: 800px) {
     .sidebar {
-        height: auto;
+        width: 190px;
     }
 
-    .content {
-        min-height: 700px;
+    .story-side {
+        display: none;
     }
 
-    .story-panel {
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        z-index: 5;
+    .story-content {
+        padding: 25px;
+    }
+
+    .choices {
+        grid-template-columns: 1fr;
+    }
+
+    .panel {
+        width: min(360px, 90vw);
     }
 }
 </style>
@@ -441,182 +536,319 @@ button {
 
 <div class="app">
 
-    <!-- ================= SIDEBAR ================= -->
-
+    <!-- SIDEBAR -->
     <aside class="sidebar">
 
         <div class="logo">
-            🏫 School World
+            School World
         </div>
 
-        <div class="section-title">
-            Menu
-        </div>
-
-        <button class="menu-button" onclick="toggleStory()">
-            📖 Story Mode
+        <button class="menu-button active" onclick="showChat()">
+            💬 AI Chat
         </button>
 
-        <button class="menu-button" onclick="showTree()">
-            🌳 Story Tree
+        <button class="menu-button" onclick="openCharacters()">
+            👥 Characters
         </button>
 
-        <button class="menu-button" onclick="showInteractions()">
-            👥 NPC Interactions
+        <button class="menu-button" onclick="startStory()">
+            🎭 Story Mode
         </button>
 
-        <button class="menu-button" onclick="showImprovements()">
-            🧠 Improvement
-        </button>
-
-        <div class="section-title">
-            Characters
-        </div>
-
-        <div id="characterList"></div>
-
-        <div class="section-title">
-            World
-        </div>
-
-        <button class="menu-button" onclick="newWorld()">
-            ✨ New World
+        <button class="menu-button" onclick="travelMenu()">
+            🚶 Travel
         </button>
 
         <button class="menu-button" onclick="resetWorld()">
-            🔄 Reset World
+            🌎 Reset World
         </button>
 
-        <button class="menu-button" onclick="showPreviousWorlds()">
-            📚 Replay Worlds
-        </button>
-
-        <div class="world-info" id="worldInfo">
-            Loading world...
+        <div class="world-info">
+            <div>World: <span id="worldNumber">1</span></div>
+            <div>Location: <span id="worldLocation">Classroom</span></div>
+            <div>Story branches are generated separately for each world.</div>
         </div>
 
     </aside>
 
-    <!-- ================= MAIN ================= -->
 
+    <!-- MAIN -->
     <main class="main">
 
         <header class="topbar">
+            <div class="location" id="topLocation">
+                Classroom
+            </div>
 
-            <div>
-                <div class="title" id="chatTitle">
+            <div class="status" id="status">
+                Online
+            </div>
+        </header>
+
+
+        <section class="chat-area">
+
+            <div class="character-header">
+                <div class="character-name" id="activeCharacterName">
                     Select a character
                 </div>
 
-                <div class="status" id="status">
-                    Connecting...
+                <div class="character-description" id="activeCharacterDescription">
+                    Open the character menu to choose someone.
                 </div>
             </div>
 
-            <div class="top-actions">
 
-                <button
-                    class="small-button"
-                    onclick="newText()">
-                    New Text
-                </button>
+            <div class="messages" id="messages">
 
-                <button
-                    class="small-button"
-                    onclick="resetConversation()">
-                    Reset Conversation
-                </button>
+                <div class="message system">
+                    Choose a character to begin a conversation.
+                </div>
 
             </div>
 
-        </header>
 
-        <div class="content">
+            <div class="composer">
 
-            <!-- CHAT -->
+                <div class="composer-row">
 
-            <section class="chat-area">
+                    <textarea
+                        id="messageInput"
+                        placeholder="Talk to the character..."
+                        onkeydown="handleInput(event)"
+                    ></textarea>
 
-                <div
-                    class="messages"
-                    id="messages">
-
-                    <div class="empty">
-                        Choose someone from the school to start talking.
-                    </div>
-
-                </div>
-
-                <div class="input-area">
-
-                    <div class="input-box">
-
-                        <input
-                            id="messageInput"
-                            type="text"
-                            placeholder="Talk to someone..."
-                            autocomplete="off"
-                        >
-
-                        <button
-                            class="send"
-                            onclick="sendMessage()">
-                            Send
-                        </button>
-
-                    </div>
+                    <button class="send-button" onclick="sendMessage()">
+                        Send
+                    </button>
 
                 </div>
 
-            </section>
+                <div class="small-actions">
 
-            <!-- STORY -->
+                    <button class="small-button" onclick="newText()">
+                        New Text
+                    </button>
 
-            <aside
-                class="story-panel"
-                id="storyPanel">
-
-                <div class="story-header">
-
-                    <div
-                        class="story-title"
-                        id="storyTitle">
-                        Story Mode
-                    </div>
-
-                    <div class="status">
-                        Every decision affects what comes next.
-                    </div>
+                    <button class="small-button" onclick="resetConversation()">
+                        Reset Conversation
+                    </button>
 
                 </div>
 
-                <div
-                    class="story-content"
-                    id="storyContent">
-                </div>
+            </div>
 
-            </aside>
-
-        </div>
+        </section>
 
     </main>
 
 </div>
 
 
-<!-- ================= MODAL ================= -->
+<!-- CHARACTER PANEL -->
 
-<div
-    class="overlay"
-    id="overlay"
-    onclick="closeModal(event)">
+<div class="panel" id="characterPanel">
 
-    <div
-        class="modal"
-        id="modal"
-        onclick="event.stopPropagation()">
+    <div class="panel-title">
+        Characters
+    </div>
 
-        <div id="modalContent"></div>
+    <button
+        class="primary"
+        style="width:100%; margin-bottom:15px;"
+        onclick="openCreateCharacter()"
+    >
+        + Create Character
+    </button>
+
+    <div id="characterList"></div>
+
+</div>
+
+
+<!-- CHARACTER PROFILE MODAL -->
+
+<div class="modal" id="profileModal">
+
+    <div class="modal-box">
+
+        <h2 id="profileName"></h2>
+
+        <p id="profileRole"></p>
+
+        <p id="profileDescription"></p>
+
+        <p>
+            <strong>Personality:</strong>
+        </p>
+
+        <p id="profilePersonality"></p>
+
+        <p>
+            <strong>Traits:</strong>
+        </p>
+
+        <div class="traits" id="profileTraits"></div>
+
+        <br>
+
+        <div class="modal-actions">
+
+            <button class="primary" onclick="startCharacterConversation()">
+                Start Conversation
+            </button>
+
+            <button class="secondary" onclick="closeModal('profileModal')">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- CREATE CHARACTER -->
+
+<div class="modal" id="createModal">
+
+    <div class="modal-box">
+
+        <h2>Create Character</h2>
+
+        <input
+            id="createName"
+            class="form-input"
+            placeholder="Character name"
+        >
+
+        <input
+            id="createRole"
+            class="form-input"
+            placeholder="Role, e.g. Student"
+            value="Student"
+        >
+
+        <input
+            id="createPersonality"
+            class="form-input"
+            placeholder="Personality"
+        >
+
+        <textarea
+            id="createDescription"
+            class="form-textarea"
+            placeholder="Character description"
+        ></textarea>
+
+        <input
+            id="createTraits"
+            class="form-input"
+            placeholder="Traits separated by commas"
+        >
+
+        <div class="modal-actions">
+
+            <button class="primary" onclick="createCharacter()">
+                Create
+            </button>
+
+            <button class="secondary" onclick="closeModal('createModal')">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- TRAVEL -->
+
+<div class="modal" id="travelModal">
+
+    <div class="modal-box">
+
+        <h2>Travel</h2>
+
+        <div id="travelList"></div>
+
+        <br>
+
+        <button
+            class="secondary"
+            onclick="closeModal('travelModal')"
+        >
+            Cancel
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- STORY SCREEN -->
+
+<div class="story-screen" id="storyScreen">
+
+    <div class="story-top">
+
+        <div class="story-title" id="storyTitle">
+            Story Mode
+        </div>
+
+        <button class="secondary" onclick="exitStory()">
+            Exit Story
+        </button>
+
+    </div>
+
+
+    <div class="story-body">
+
+        <div class="story-content">
+
+            <div class="story-scene">
+
+                <div
+                    class="story-scene-title"
+                    id="storySceneTitle"
+                >
+                    Loading...
+                </div>
+
+                <div
+                    class="story-text"
+                    id="storyText"
+                ></div>
+
+                <div
+                    class="choices"
+                    id="choices"
+                ></div>
+
+                <div
+                    class="ending"
+                    id="storyEnding"
+                    style="display:none;"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <aside class="story-side">
+
+            <div class="tree-title">
+                Story Tree
+            </div>
+
+            <div id="storyTree"></div>
+
+        </aside>
 
     </div>
 
@@ -624,1318 +856,929 @@ button {
 
 
 <script>
-let selectedCharacter = null;
-let story = null;
-let storyTree = null;
-let idleTimer = null;
-
-const characterList =
-    document.getElementById("characterList");
-
-const messages =
-    document.getElementById("messages");
-
-const input =
-    document.getElementById("messageInput");
-
-const statusText =
-    document.getElementById("status");
-
-const storyPanel =
-    document.getElementById("storyPanel");
-
-const storyContent =
-    document.getElementById("storyContent");
+let world = null;
+let activeCharacter = null;
+let selectedProfile = null;
+let storyData = null;
 
 
-// ============================================================
-// INITIALIZATION
-// ============================================================
+/* =========================================================
+   BASIC
+   ========================================================= */
 
-async function initialize() {
+async function loadWorld() {
 
     try {
 
-        const response =
-            await fetch("/api/status");
+        const response = await fetch("/world");
 
-        const data =
-            await response.json();
+        world = await response.json();
 
-        renderCharacters(data.characters);
+        document.getElementById("worldNumber").textContent =
+            world.world_number;
 
-        renderWorld(data.world);
+        document.getElementById("worldLocation").textContent =
+            world.location;
 
-        story = data.story;
-        storyTree = story.tree;
+        document.getElementById("topLocation").textContent =
+            world.location;
 
-        statusText.textContent =
-            data.ai_configured
-                ? "AI connected"
-                : "AI key missing";
-
-        if (data.ai_configured) {
-            statusText.textContent =
-                "AI connected • " + data.model;
-        }
-
-        renderStory();
+        renderCharacters();
 
     } catch (error) {
 
-        statusText.textContent =
-            "Connection error";
-
         console.error(error);
+
+        document.getElementById("status").textContent =
+            "Connection problem";
+
     }
 }
 
 
-// ============================================================
-// CHARACTERS
-// ============================================================
+function showChat() {
 
-function renderCharacters(characters) {
+    document.getElementById("characterPanel")
+        .classList.remove("open");
 
-    characterList.innerHTML = "";
-
-    Object.entries(characters).forEach(
-        ([id, character]) => {
-
-            const button =
-                document.createElement("button");
-
-            button.className =
-                "character-button";
-
-            button.textContent =
-                `${character.name} • ${character.location}`;
-
-            button.onclick =
-                () => selectCharacter(id);
-
-            button.dataset.character = id;
-
-            characterList.appendChild(button);
-        }
-    );
 }
 
 
-function selectCharacter(id) {
+function openCharacters() {
 
-    selectedCharacter = id;
+    document.getElementById("characterPanel")
+        .classList.add("open");
 
-    const buttons =
-        document.querySelectorAll(
-            ".character-button"
-        );
+    renderCharacters();
 
-    buttons.forEach(button => {
-
-        button.classList.toggle(
-            "active",
-            button.dataset.character === id
-        );
-
-    });
-
-    const button =
-        document.querySelector(
-            `[data-character="${id}"]`
-        );
-
-    const name =
-        button
-            ? button.textContent.split(" • ")[0]
-            : id;
-
-    document.getElementById(
-        "chatTitle"
-    ).textContent = `Talking to ${name}`;
-
-    loadConversation();
-
-    input.focus();
 }
 
 
-// ============================================================
-// CONVERSATION
-// ============================================================
+function closeModal(id) {
 
-async function loadConversation() {
+    document.getElementById(id)
+        .classList.remove("show");
 
-    if (!selectedCharacter) {
+}
+
+
+/* =========================================================
+   CHARACTERS
+   ========================================================= */
+
+function renderCharacters() {
+
+    const list = document.getElementById("characterList");
+
+    list.innerHTML = "";
+
+    if (!world || !world.characters) {
         return;
     }
 
-    messages.innerHTML = "";
+    world.characters.forEach(character => {
 
-    // There isn't a separate GET route for conversations,
-    // so the page starts visually clean.
-    // The backend still keeps memories.
-    addMessage(
-        "ai",
-        "Conversation loaded. I remember important things from this world."
-    );
+        const card = document.createElement("div");
+
+        card.className = "character-card";
+
+        const traits = (character.traits || [])
+            .map(t => `<span class="trait">${escapeHtml(t)}</span>`)
+            .join("");
+
+        card.innerHTML = `
+            <h3>${escapeHtml(character.name)}</h3>
+            <p>${escapeHtml(character.role)}</p>
+            <p>${escapeHtml(character.description)}</p>
+
+            <div class="traits">
+                ${traits}
+            </div>
+
+            <button onclick="openCharacterProfile('${character.id}')">
+                View Character
+            </button>
+        `;
+
+        list.appendChild(card);
+
+    });
+
 }
 
 
-function addMessage(type, text) {
+function openCharacterProfile(id) {
 
-    const wrapper =
-        document.createElement("div");
+    const character = world.characters.find(
+        c => c.id === id
+    );
 
-    wrapper.className =
-        `message ${type}`;
+    if (!character) {
+        return;
+    }
 
-    const inner =
-        document.createElement("div");
+    selectedProfile = character;
 
-    inner.className =
-        "message-inner";
+    document.getElementById("profileName").textContent =
+        character.name;
 
-    inner.textContent = text;
+    document.getElementById("profileRole").textContent =
+        character.role;
 
-    wrapper.appendChild(inner);
+    document.getElementById("profileDescription").textContent =
+        character.description;
 
-    messages.appendChild(wrapper);
+    document.getElementById("profilePersonality").textContent =
+        character.personality;
 
-    messages.scrollTop =
-        messages.scrollHeight;
+    const traits = document.getElementById("profileTraits");
+
+    traits.innerHTML = "";
+
+    (character.traits || []).forEach(trait => {
+
+        const span = document.createElement("span");
+
+        span.className = "trait";
+
+        span.textContent = trait;
+
+        traits.appendChild(span);
+
+    });
+
+    document.getElementById("profileModal")
+        .classList.add("show");
+
+}
+
+
+async function startCharacterConversation() {
+
+    if (!selectedProfile) {
+        return;
+    }
+
+    activeCharacter = selectedProfile;
+
+    document.getElementById("activeCharacterName").textContent =
+        activeCharacter.name;
+
+    document.getElementById("activeCharacterDescription").textContent =
+        `${activeCharacter.role} • ${activeCharacter.personality}`;
+
+    document.getElementById("messages").innerHTML = "";
+
+    const greeting = document.createElement("div");
+
+    greeting.className = "message system";
+
+    greeting.textContent =
+        `You are now talking with ${activeCharacter.name}.`;
+
+    document.getElementById("messages").appendChild(greeting);
+
+    closeModal("profileModal");
+
+    document.getElementById("characterPanel")
+        .classList.remove("open");
+
+    document.getElementById("messageInput").focus();
+
+}
+
+
+/* =========================================================
+   CHAT
+   ========================================================= */
+
+function handleInput(event) {
+
+    if (event.key === "Enter" && !event.shiftKey) {
+
+        event.preventDefault();
+
+        sendMessage();
+
+    }
+
 }
 
 
 async function sendMessage() {
 
-    if (!selectedCharacter) {
+    if (!activeCharacter) {
 
-        alert(
-            "Choose a character first."
-        );
+        alert("Choose a character first.");
 
         return;
     }
 
-    const text =
-        input.value.trim();
+    const input =
+        document.getElementById("messageInput");
 
-    if (!text) {
+    const message = input.value.trim();
+
+    if (!message) {
         return;
     }
 
-    addMessage("user", text);
+    addMessage(message, "user");
 
     input.value = "";
 
-    input.disabled = true;
-
-    statusText.textContent =
+    document.getElementById("status").textContent =
         "Thinking...";
 
     try {
 
-        const response =
-            await fetch("/chat", {
+        const response = await fetch("/chat", {
 
-                method: "POST",
+            method: "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-                body: JSON.stringify({
-                    character:
-                        selectedCharacter,
+            body: JSON.stringify({
+                character_id: activeCharacter.id,
+                message: message
+            })
 
-                    message:
-                        text
-                })
-            });
+        });
 
-        const data =
-            await response.json();
+        const result = await response.json();
 
         if (!response.ok) {
 
-            throw new Error(
-                data.error ||
-                "Chat request failed."
+            addMessage(
+                result.error || "Something went wrong.",
+                "system"
             );
+
+        } else {
+
+            addMessage(
+                result.reply,
+                "ai"
+            );
+
         }
 
-        addMessage(
-            "ai",
-            data.reply
-        );
+        document.getElementById("status").textContent =
+            "Online";
 
-        statusText.textContent =
-            "AI connected";
+        await loadWorld();
+
+        // Keep active character reference updated.
+        activeCharacter =
+            world.characters.find(
+                c => c.id === activeCharacter.id
+            ) || activeCharacter;
 
     } catch (error) {
 
+        console.error(error);
+
         addMessage(
-            "ai",
-            "I couldn't connect right now: " +
-            error.message
+            "Could not connect to the server.",
+            "system"
         );
 
-        statusText.textContent =
-            "Chat error";
+        document.getElementById("status").textContent =
+            "Connection problem";
 
-    } finally {
-
-        input.disabled = false;
-
-        input.focus();
-
-        restartIdleTimer();
     }
+
 }
 
 
-input.addEventListener(
-    "keydown",
-    event => {
+function addMessage(text, type) {
 
-        if (event.key === "Enter") {
-            sendMessage();
-        }
+    const container =
+        document.getElementById("messages");
 
-    }
-);
+    const message =
+        document.createElement("div");
+
+    message.className =
+        `message ${type}`;
+
+    message.textContent = text;
+
+    container.appendChild(message);
+
+    container.scrollTop =
+        container.scrollHeight;
+
+}
 
 
-// ============================================================
-// NEW TEXT
-// ============================================================
+/* =========================================================
+   NEW TEXT
+   ========================================================= */
 
 function newText() {
 
-    messages.innerHTML = "";
+    document.getElementById("messages").innerHTML = "";
 
-    addMessage(
-        "ai",
-        "New text started. Your world memories are still intact."
-    );
+    const message =
+        document.createElement("div");
 
-    input.focus();
+    message.className =
+        "message system";
+
+    message.textContent =
+        "New conversation text started. Character memory remains.";
+
+    document.getElementById("messages")
+        .appendChild(message);
+
 }
 
 
-// ============================================================
-// RESET CONVERSATION
-// ============================================================
+/* =========================================================
+   RESET CONVERSATION
+   ========================================================= */
 
 async function resetConversation() {
 
-    if (!selectedCharacter) {
+    if (!activeCharacter) {
 
-        alert(
-            "Choose a character first."
+        alert("Choose a character first.");
+
+        return;
+    }
+
+    if (!confirm(
+        `Reset your conversation with ${activeCharacter.name}?`
+    )) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/conversation/reset",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    character_id: activeCharacter.id
+                })
+            }
         );
 
-        return;
-    }
+        const result = await response.json();
 
-    if (
-        !confirm(
-            "Reset this conversation? Important world memories will remain."
-        )
-    ) {
-        return;
-    }
+        if (!response.ok) {
 
-    await fetch(
-        "/api/reset-conversation",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-            body: JSON.stringify({
-                character:
-                    selectedCharacter
-            })
+            alert(result.error || "Could not reset.");
+
+            return;
         }
-    );
 
-    messages.innerHTML = "";
+        document.getElementById("messages").innerHTML = "";
 
-    addMessage(
-        "ai",
-        "Conversation reset. My important memories of this world remain."
-    );
+        addMessage(
+            `Conversation with ${activeCharacter.name} was reset. Their world memories remain.`,
+            "system"
+        );
+
+    } catch (error) {
+
+        alert("Could not connect to the server.");
+
+    }
+
 }
 
 
-// ============================================================
-// STORY MODE
-// ============================================================
+/* =========================================================
+   CREATE CHARACTER
+   ========================================================= */
 
-function toggleStory() {
+function openCreateCharacter() {
 
-    storyPanel.classList.toggle(
-        "visible"
-    );
+    document.getElementById("createModal")
+        .classList.add("show");
 
-    renderStory();
 }
 
 
-async function loadStory() {
+async function createCharacter() {
 
-    const response =
-        await fetch("/api/story");
+    const name =
+        document.getElementById("createName").value.trim();
 
-    story =
-        await response.json();
+    const role =
+        document.getElementById("createRole").value.trim();
 
-    storyTree =
-        story.tree;
+    const personality =
+        document.getElementById("createPersonality").value.trim();
 
-    renderStory();
+    const description =
+        document.getElementById("createDescription").value.trim();
+
+    const traits =
+        document.getElementById("createTraits")
+            .value
+            .split(",")
+            .map(x => x.trim())
+            .filter(Boolean);
+
+    if (!name || !personality) {
+
+        alert("Name and personality are required.");
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/characters/create",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name,
+                    role,
+                    personality,
+                    description,
+                    traits
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+
+            alert(result.error || "Could not create character.");
+
+            return;
+        }
+
+        closeModal("createModal");
+
+        document.getElementById("createName").value = "";
+        document.getElementById("createPersonality").value = "";
+        document.getElementById("createDescription").value = "";
+        document.getElementById("createTraits").value = "";
+
+        await loadWorld();
+
+        openCharacters();
+
+    } catch (error) {
+
+        alert("Could not connect to the server.");
+
+    }
+
+}
+
+
+/* =========================================================
+   TRAVEL
+   ========================================================= */
+
+function travelMenu() {
+
+    if (!world) {
+        return;
+    }
+
+    const list =
+        document.getElementById("travelList");
+
+    list.innerHTML = "";
+
+    world.locations.forEach(location => {
+
+        const button =
+            document.createElement("button");
+
+        button.className = "secondary";
+
+        button.style.width = "100%";
+        button.style.marginBottom = "8px";
+
+        button.textContent = location;
+
+        button.onclick = () =>
+            travelTo(location);
+
+        list.appendChild(button);
+
+    });
+
+    document.getElementById("travelModal")
+        .classList.add("show");
+
+}
+
+
+async function travelTo(location) {
+
+    try {
+
+        const response = await fetch(
+            "/world/travel",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    location
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+
+            alert(result.error || "Travel failed.");
+
+            return;
+        }
+
+        closeModal("travelModal");
+
+        await loadWorld();
+
+        addMessage(
+            `You traveled to the ${location}.`,
+            "system"
+        );
+
+    } catch (error) {
+
+        alert("Could not connect to the server.");
+
+    }
+
+}
+
+
+/* =========================================================
+   RESET WORLD
+   ========================================================= */
+
+async function resetWorld() {
+
+    const confirmed = confirm(
+        "Reset the world?\n\nThis creates a new world and clears world memories, conversation histories, and story progression."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/world/reset",
+            {
+                method: "POST"
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+
+            alert(result.error || "Reset failed.");
+
+            return;
+        }
+
+        activeCharacter = null;
+
+        document.getElementById(
+            "activeCharacterName"
+        ).textContent = "Select a character";
+
+        document.getElementById(
+            "activeCharacterDescription"
+        ).textContent =
+            "Open the character menu to choose someone.";
+
+        document.getElementById(
+            "messages"
+        ).innerHTML = "";
+
+        addMessage(
+            `World ${result.world_number} created. The old world has been reset.`,
+            "system"
+        );
+
+        await loadWorld();
+
+    } catch (error) {
+
+        alert("Could not connect to the server.");
+
+    }
+
+}
+
+
+/* =========================================================
+   STORY MODE
+   ========================================================= */
+
+async function startStory() {
+
+    document.getElementById("storyScreen")
+        .classList.add("show");
+
+    document.getElementById("storySceneTitle")
+        .textContent = "Creating a new story...";
+
+    document.getElementById("storyText")
+        .textContent = "Generating a unique story tree for this world.";
+
+    document.getElementById("choices")
+        .innerHTML = "";
+
+    document.getElementById("storyTree")
+        .innerHTML = "";
+
+    document.getElementById("storyEnding")
+        .style.display = "none";
+
+    try {
+
+        const response = await fetch(
+            "/story/start",
+            {
+                method: "POST"
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+
+            document.getElementById("storyText")
+                .textContent =
+                result.error || "Story generation failed.";
+
+            return;
+        }
+
+        storyData = result.story;
+
+        renderStory();
+
+    } catch (error) {
+
+        document.getElementById("storyText")
+            .textContent =
+            "Could not connect to the story server.";
+
+    }
+
 }
 
 
 function renderStory() {
 
-    if (!story || !storyTree) {
+    if (!storyData) {
         return;
     }
 
-    const current =
-        story.node_id === "start"
-            ? storyTree.start
-            : storyTree.nodes[
-                story.node_id
-            ];
+    document.getElementById("storyTitle")
+        .textContent =
+        storyData.title || "Story Mode";
 
-    if (!current) {
-        return;
-    }
+    const tree =
+        storyData.tree || {};
 
-    document.getElementById(
-        "storyTitle"
-    ).textContent =
-        storyTree.title;
+    const node =
+        tree.nodes?.[storyData.current_node];
 
-    storyContent.innerHTML = "";
+    if (!node) {
 
-    const scene =
-        document.createElement("div");
-
-    scene.className =
-        "story-scene";
-
-    scene.textContent =
-        current.text;
-
-    storyContent.appendChild(scene);
-
-    if (current.ending) {
-
-        const ending =
-            document.createElement("div");
-
-        ending.className =
-            "ending";
-
-        ending.innerHTML =
-            `<strong>ENDING REACHED</strong><br><br>
-             ${storyTree.endings[current.ending]}`;
-
-        storyContent.appendChild(
-            ending
-        );
+        renderStoryTree();
 
         return;
     }
+
+    document.getElementById("storySceneTitle")
+        .textContent =
+        node.title || "Scene";
+
+    document.getElementById("storyText")
+        .textContent =
+        node.text || "";
 
     const choices =
-        current.choices || [];
+        document.getElementById("choices");
 
-    choices.forEach(
-        (nodeId, index) => {
+    choices.innerHTML = "";
 
-            const node =
-                storyTree.nodes[nodeId];
+    (node.choices || []).forEach(choice => {
 
-            if (!node) {
-                return;
-            }
+        const button =
+            document.createElement("button");
 
-            const button =
-                document.createElement("button");
+        button.className = "choice";
 
-            button.className =
-                "choice";
+        button.innerHTML = `
+            <span class="choice-label">
+                ${escapeHtml(choice.id)}
+            </span>
+            ${escapeHtml(choice.text)}
+        `;
 
-            const letter =
-                String.fromCharCode(
-                    65 + index
-                );
+        button.onclick = () =>
+            chooseStory(choice.id);
 
-            button.innerHTML =
-                `<span class="choice-label">
-                    ${letter}.
-                </span>
-                ${node.text}`;
+        choices.appendChild(button);
 
-            button.onclick =
-                () => chooseStory(index);
+    });
 
-            storyContent.appendChild(
-                button
-            );
-        }
-    );
+    renderStoryTree();
 
-    const progress =
-        document.createElement("div");
-
-    progress.className =
-        "status";
-
-    progress.textContent =
-        `Chapter ${story.chapter} • ` +
-        `${story.visited_nodes.length} discovered nodes`;
-
-    storyContent.appendChild(
-        progress
-    );
 }
 
 
 async function chooseStory(choice) {
 
-    const response =
-        await fetch(
-            "/api/story/choose",
+    try {
+
+        const response = await fetch(
+            "/story/choose",
             {
                 method: "POST",
                 headers: {
-                    "Content-Type":
-                        "application/json"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    choice: choice
+                    choice
                 })
             }
         );
 
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "Story choice failed."
-        );
-
-        return;
-    }
-
-    await loadStory();
-
-    storyPanel.classList.add(
-        "visible"
-    );
-}
-
-
-// ============================================================
-// STORY TREE
-// ============================================================
-
-function showTree() {
-
-    if (!storyTree) {
-        return;
-    }
-
-    const visited =
-        new Set(
-            story.visited_nodes
-        );
-
-    let html = `
-        <h2>🌳 Story Tree</h2>
-        <p>
-            Blue = discovered.
-            Gray = not discovered.
-            Gold = ending.
-        </p>
-    `;
-
-    html += renderTreeNode(
-        "start",
-        storyTree.start,
-        visited,
-        0
-    );
-
-    document.getElementById(
-        "modalContent"
-    ).innerHTML = html;
-
-    document.getElementById(
-        "overlay"
-    ).classList.add("visible");
-}
-
-
-function renderTreeNode(
-    id,
-    node,
-    visited,
-    depth
-) {
-
-    if (!node) {
-        return "";
-    }
-
-    const seen =
-        id === "start" ||
-        visited.has(id);
-
-    const ending =
-        Boolean(node.ending);
-
-    let html = `
-        <div class="tree-node
-            ${seen ? "seen" : ""}
-            ${ending ? "ending" : ""}"
-            style="margin-left:${Math.min(
-                depth * 10,
-                160
-            )}px">
-
-            <div class="tree-label">
-                ${id}
-            </div>
-
-            <div class="${
-                seen
-                    ? "tree-seen"
-                    : "tree-hidden"
-            }">
-
-                ${
-                    seen
-                        ? escapeHtml(
-                            node.text || ""
-                          )
-                        : "??? Undiscovered path"
-                }
-
-            </div>
-    `;
-
-    if (ending && seen) {
-
-        html += `
-            <div class="tree-label">
-                Ending:
-                ${escapeHtml(
-                    storyTree.endings[
-                        node.ending
-                    ] || node.ending
-                )}
-            </div>
-        `;
-
-    }
-
-    if (
-        seen &&
-        node.choices &&
-        depth < 4
-    ) {
-
-        node.choices.forEach(
-            childId => {
-
-                const child =
-                    storyTree.nodes[
-                        childId
-                    ];
-
-                if (child) {
-
-                    html +=
-                        renderTreeNode(
-                            childId,
-                            child,
-                            visited,
-                            depth + 1
-                        );
-                }
-
-            }
-        );
-
-    }
-
-    html += "</div>";
-
-    return html;
-}
-
-
-// ============================================================
-// NPC INTERACTIONS
-// ============================================================
-
-async function showInteractions() {
-
-    const response =
-        await fetch(
-            "/api/npc-interactions"
-        );
-
-    const data =
-        await response.json();
-
-    let html = `
-        <h2>👥 NPC Interactions</h2>
-        <p>
-            Characters can have their own conversations
-            even when you're not talking to them.
-        </p>
-    `;
-
-    if (!data.interactions.length) {
-
-        html += `
-            <p>
-                No NPC interactions have happened yet.
-            </p>
-        `;
-
-    }
-
-    data.interactions.forEach(
-        item => {
-
-            html += `
-                <div class="interaction">
-
-                    <strong>
-                        ${escapeHtml(
-                            item.character_a
-                        )}
-                        ↔
-                        ${escapeHtml(
-                            item.character_b
-                        )}
-                    </strong>
-
-                    <div class="status">
-                        ${escapeHtml(
-                            item.location
-                        )}
-                    </div>
-
-                    <p>
-                        ${escapeHtml(
-                            item.content
-                        )}
-                    </p>
-
-                </div>
-            `;
-        }
-    );
-
-    html += `
-        <button
-            class="modal-button"
-            onclick="createNPCInteraction()">
-
-            Create NPC Interaction
-
-        </button>
-    `;
-
-    document.getElementById(
-        "modalContent"
-    ).innerHTML = html;
-
-    document.getElementById(
-        "overlay"
-    ).classList.add("visible");
-}
-
-
-async function createNPCInteraction() {
-
-    const response =
-        await fetch(
-            "/api/npc-interaction",
-            {
-                method: "POST"
-            }
-        );
-
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "NPC interaction failed."
-        );
-
-        return;
-    }
-
-    showInteractions();
-}
-
-
-// ============================================================
-// SELF IMPROVEMENT
-// ============================================================
-
-async function showImprovements() {
-
-    const response =
-        await fetch("/api/status");
-
-    const data =
-        await response.json();
-
-    const improvements =
-        await getImprovements();
-
-    let html = `
-        <h2>🧠 Improvement System</h2>
-
-        <p>
-            The improvement system studies what happens
-            in the world and stores behavioral improvements.
-            It does not rewrite your Python code.
-        </p>
-
-        <button
-            class="modal-button"
-            onclick="runImprovement()">
-
-            Analyze World & Improve AI
-
-        </button>
-
-        <div id="improvementList">
-    `;
-
-    improvements.forEach(
-        item => {
-
-            html += `
-                <div class="improvement">
-                    ${escapeHtml(item)}
-                </div>
-            `;
-
-        }
-    );
-
-    html += "</div>";
-
-    document.getElementById(
-        "modalContent"
-    ).innerHTML = html;
-
-    document.getElementById(
-        "overlay"
-    ).classList.add("visible");
-}
-
-
-async function getImprovements() {
-
-    const response =
-        await fetch("/api/status");
-
-    const data =
-        await response.json();
-
-    // Improvements are not directly included in status.
-    // Use an empty list until the improvement engine runs.
-    return [];
-}
-
-
-async function runImprovement() {
-
-    const button =
-        event.target;
-
-    button.disabled = true;
-
-    button.textContent =
-        "Improving...";
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/improve",
-                {
-                    method: "POST"
-                }
-            );
-
-        const data =
-            await response.json();
+        const result = await response.json();
 
         if (!response.ok) {
 
-            throw new Error(
-                data.error ||
-                "Improvement failed."
-            );
+            alert(result.error || "Choice failed.");
+
+            return;
         }
 
-        let html = `
-            <h2>🧠 AI Improvements</h2>
+        storyData = result.story;
 
-            <p>
-                New behavioral improvements were created.
-            </p>
-        `;
+        renderStory();
 
-        data.improvements.forEach(
-            item => {
+        if (result.ending) {
 
-                html += `
-                    <div class="improvement">
-                        ${escapeHtml(item)}
-                    </div>
-                `;
+            showEnding(result.ending);
 
-            }
-        );
-
-        document.getElementById(
-            "modalContent"
-        ).innerHTML = html;
+        }
 
     } catch (error) {
 
-        alert(
-            error.message
-        );
+        alert("Could not connect to the story server.");
 
-        button.disabled = false;
-
-        button.textContent =
-            "Analyze World & Improve AI";
     }
+
 }
 
 
-// ============================================================
-// WORLD CONTROLS
-// ============================================================
+function showEnding(ending) {
 
-function renderWorld(world) {
+    const endingBox =
+        document.getElementById("storyEnding");
 
-    document.getElementById(
-        "worldInfo"
-    ).innerHTML = `
-        <strong>
-            World ${world.world_number}
-        </strong>
+    endingBox.style.display = "block";
 
-        <br><br>
-
-        Location:
-        ${escapeHtml(
-            world.current_location
-        )}
-
-        <br>
-
-        Seed:
-        ${escapeHtml(
-            world.seed
-        )}
-    `;
-}
-
-
-async function refreshWorld() {
-
-    const response =
-        await fetch("/api/status");
-
-    const data =
-        await response.json();
-
-    renderWorld(data.world);
-
-    story =
-        data.story;
-
-    storyTree =
-        story.tree;
-
-    renderStory();
-}
-
-
-async function newWorld() {
-
-    if (
-        !confirm(
-            "Create a completely new world? Your current world will be saved for replay."
-        )
-    ) {
-        return;
-    }
-
-    const response =
-        await fetch(
-            "/api/world/new",
-            {
-                method: "POST"
-            }
-        );
-
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "Could not create world."
-        );
-
-        return;
-    }
-
-    renderWorld(data.world);
-
-    story =
-        data.story;
-
-    storyTree =
-        story.tree;
-
-    messages.innerHTML = "";
-
-    addMessage(
-        "ai",
-        "A new world has begun."
-    );
-
-    renderStory();
-}
-
-
-async function resetWorld() {
-
-    if (
-        !confirm(
-            "RESET THIS WORLD? This clears conversations, memories, NPC interactions, events, and story progress."
-        )
-    ) {
-        return;
-    }
-
-    const response =
-        await fetch(
-            "/api/world/reset",
-            {
-                method: "POST"
-            }
-        );
-
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "Could not reset world."
-        );
-
-        return;
-    }
-
-    renderWorld(data.world);
-
-    story =
-        data.story;
-
-    storyTree =
-        story.tree;
-
-    messages.innerHTML = "";
-
-    addMessage(
-        "ai",
-        "The world has been reset. Everyone's world-specific memories and story progress are gone."
-    );
-
-    renderStory();
-}
-
-
-async function showPreviousWorlds() {
-
-    const response =
-        await fetch("/api/worlds");
-
-    const data =
-        await response.json();
-
-    let html = `
-        <h2>📚 Replay Worlds</h2>
-
-        <p>
-            Previous worlds are saved here so you can replay them.
-        </p>
+    endingBox.innerHTML = `
+        <h2>${escapeHtml(ending.title || "Ending")}</h2>
+        <p>${escapeHtml(ending.text || "")}</p>
+        <button
+            class="primary"
+            onclick="startStory()"
+        >
+            Create Another Story
+        </button>
     `;
 
-    if (!data.worlds.length) {
+}
 
-        html += `
-            <p>
-                No previous worlds yet.
-            </p>
-        `;
 
+function renderStoryTree() {
+
+    const container =
+        document.getElementById("storyTree");
+
+    container.innerHTML = "";
+
+    if (!storyData || !storyData.tree) {
+        return;
     }
 
-    data.worlds.forEach(
-        world => {
+    const tree =
+        storyData.tree;
 
-            html += `
-                <div class="interaction">
+    const nodes =
+        tree.nodes || {};
 
-                    <strong>
-                        World ${world.world_number}
-                    </strong>
+    const endings =
+        tree.endings || [];
 
-                    <div class="status">
-                        Seed: ${escapeHtml(
-                            world.seed
-                        )}
-                    </div>
+    Object.keys(nodes).forEach(id => {
 
-                    <button
-                        class="modal-button"
-                        onclick="replayWorld(
-                            ${world.id}
-                        )">
+        const div =
+            document.createElement("div");
 
-                        Replay This World
+        div.className = "tree-node";
 
-                    </button>
-
-                </div>
-            `;
+        if (
+            storyData.seen_nodes &&
+            storyData.seen_nodes.includes(id)
+        ) {
+            div.classList.add("seen");
         }
-    );
 
-    document.getElementById(
-        "modalContent"
-    ).innerHTML = html;
+        if (id === storyData.current_node) {
+            div.classList.add("current");
+        }
 
-    document.getElementById(
-        "overlay"
-    ).classList.add("visible");
+        div.textContent =
+            storyData.seen_nodes?.includes(id)
+                ? `${id}: ${nodes[id].title || "Scene"}`
+                : `${id}: Unseen branch`;
+
+        container.appendChild(div);
+
+    });
+
+    endings.forEach(ending => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "tree-node ending";
+
+        if (
+            storyData.seen_nodes &&
+            storyData.seen_nodes.includes(ending.id)
+        ) {
+            div.textContent =
+                `${ending.id}: ${ending.title}`;
+        } else {
+            div.textContent =
+                `${ending.id}: Unseen Ending`;
+        }
+
+        container.appendChild(div);
+
+    });
+
 }
 
 
-async function replayWorld(id) {
+function exitStory() {
 
-    const response =
-        await fetch(
-            "/api/world/replay",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
-                    world_id: id
-                })
-            }
-        );
+    document.getElementById("storyScreen")
+        .classList.remove("show");
 
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "Replay failed."
-        );
-
-        return;
-    }
-
-    closeModal();
-
-    renderWorld(data.world);
-
-    story =
-        data.story;
-
-    storyTree =
-        story.tree;
-
-    messages.innerHTML = "";
-
-    addMessage(
-        "ai",
-        "Previous world restored."
-    );
-
-    renderStory();
 }
 
 
-// ============================================================
-// MODAL
-// ============================================================
-
-function closeModal(event) {
-
-    if (
-        !event ||
-        event.target ===
-        document.getElementById(
-            "overlay"
-        )
-    ) {
-
-        document.getElementById(
-            "overlay"
-        ).classList.remove(
-            "visible"
-        );
-    }
-}
-
-
-// ============================================================
-// IDLE NPC ACTIVITY
-// ============================================================
-
-function restartIdleTimer() {
-
-    clearTimeout(idleTimer);
-
-    idleTimer =
-        setTimeout(
-            async () => {
-
-                try {
-
-                    await fetch(
-                        "/api/npc-interaction",
-                        {
-                            method: "POST"
-                        }
-                    );
-
-                } catch (error) {
-
-                    console.log(
-                        "NPC activity skipped."
-                    );
-
-                }
-
-                restartIdleTimer();
-
-            },
-            60000
-        );
-}
-
-
-// ============================================================
-// LOCATION HELPER
-// ============================================================
-
-async function travelTo(location) {
-
-    const response =
-        await fetch(
-            "/world/advance",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-                    location:
-                        location
-                })
-            }
-        );
-
-    const data =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            data.error ||
-            "Travel failed."
-        );
-
-        return;
-    }
-
-    await refreshWorld();
-}
-
-
-// ============================================================
-// HTML ESCAPING
-// ============================================================
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
 
 function escapeHtml(text) {
 
-    const div =
-        document.createElement(
-            "div"
-        );
+    return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
-    div.textContent =
-        text;
-
-    return div.innerHTML;
 }
 
 
-// ============================================================
-// START
-// ============================================================
+/* =========================================================
+   START
+   ========================================================= */
 
-initialize();
-
-restartIdleTimer();
+loadWorld();
 
 </script>
 
