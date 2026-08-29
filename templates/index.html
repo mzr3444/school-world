@@ -1,12 +1,18 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>School World</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -14,24 +20,31 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #10131a;
+    background: #0b0e14;
     color: white;
     height: 100vh;
     overflow: hidden;
 }
 
+button,
+select,
+textarea,
+input {
+    font-family: inherit;
+}
+
 button {
     border: none;
     border-radius: 10px;
-    padding: 11px 15px;
+    padding: 10px 14px;
     cursor: pointer;
-    background: #242b38;
     color: white;
-    transition: 0.15s;
+    background: #242c3a;
+    transition: .15s;
 }
 
 button:hover {
-    background: #343e4e;
+    background: #354154;
 }
 
 .app {
@@ -45,43 +58,66 @@ SIDEBAR
 
 .sidebar {
     width: 260px;
-    background: #171b24;
+    background: #151922;
     border-right: 1px solid #303744;
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
+    overflow-y: auto;
 }
 
 .logo {
-    font-size: 24px;
+    font-size: 23px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .world-box {
     background: #202631;
-    padding: 13px;
-    border-radius: 12px;
+    border: 1px solid #303846;
+    padding: 14px;
+    border-radius: 13px;
 }
 
 .world-box div {
-    margin: 6px 0;
-    color: #b9c2d0;
+    margin: 7px 0;
+    color: #aeb8c8;
+}
+
+.world-box strong {
+    color: white;
+}
+
+.dimension-box {
+    background: #29203d;
+    border: 1px solid #59487b;
+    padding: 13px;
+    border-radius: 13px;
+}
+
+.dimension-name {
+    font-weight: bold;
+    font-size: 17px;
+}
+
+.dimension-number {
+    color: #a999c9;
+    font-size: 12px;
+    margin-top: 4px;
 }
 
 .menu-title {
-    color: #7f8a9d;
-    font-size: 12px;
+    color: #7f899a;
+    font-size: 11px;
     text-transform: uppercase;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .menu-button {
     width: 100%;
     text-align: left;
     background: transparent;
-    padding: 12px;
 }
 
 .menu-button:hover {
@@ -93,7 +129,15 @@ SIDEBAR
 }
 
 .story-button:hover {
-    background: #5a4099;
+    background: #5b4198;
+}
+
+.dimension-button {
+    background: #392d63;
+}
+
+.event-button {
+    background: #613c48;
 }
 
 .reset-world {
@@ -105,9 +149,28 @@ SIDEBAR
     background: #713641;
 }
 
+/* =========================================================
+TRAVEL
+========================================================= */
+
+.travel-box {
+    background: #1d232e;
+    padding: 11px;
+    border-radius: 11px;
+}
+
+.travel-box select {
+    width: 100%;
+    background: #10141c;
+    color: white;
+    border: 1px solid #394352;
+    border-radius: 8px;
+    padding: 9px;
+    outline: none;
+}
 
 /* =========================================================
-MAIN CHAT
+MAIN
 ========================================================= */
 
 .main {
@@ -118,28 +181,35 @@ MAIN CHAT
 }
 
 .topbar {
-    height: 64px;
+    height: 66px;
     border-bottom: 1px solid #303744;
+    background: #151922;
+    padding: 0 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    background: #151922;
+}
+
+.topbar-name {
+    font-weight: bold;
+    font-size: 16px;
 }
 
 .location {
-    color: #aeb8c8;
+    color: #9da8ba;
+    font-size: 13px;
+    margin-top: 3px;
 }
 
 .chat {
     flex: 1;
     overflow-y: auto;
-    padding: 25px;
+    padding: 24px;
 }
 
 .message {
     max-width: 760px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     padding: 15px;
     border-radius: 15px;
     line-height: 1.55;
@@ -155,13 +225,18 @@ MAIN CHAT
     background: #202631;
 }
 
+.message.system {
+    background: #302640;
+    border: 1px solid #55416e;
+}
+
 .message-name {
     font-weight: bold;
     margin-bottom: 7px;
 }
 
 .composer {
-    padding: 15px;
+    padding: 14px;
     border-top: 1px solid #303744;
     background: #151922;
     display: flex;
@@ -176,22 +251,26 @@ MAIN CHAT
     background: #202631;
     color: white;
     border-radius: 12px;
-    padding: 14px;
+    padding: 13px;
     outline: none;
+}
+
+.composer textarea:focus {
+    border-color: #6889bb;
 }
 
 .send {
     background: #496fa8;
+    min-width: 80px;
 }
 
-
 /* =========================================================
-CHARACTER PANEL
+CHARACTERS
 ========================================================= */
 
 .characters {
-    width: 270px;
-    background: #171b24;
+    width: 275px;
+    background: #151922;
     border-left: 1px solid #303744;
     padding: 15px;
     overflow-y: auto;
@@ -203,6 +282,7 @@ CHARACTER PANEL
     border-radius: 12px;
     margin-bottom: 10px;
     cursor: pointer;
+    border: 1px solid transparent;
 }
 
 .character-card:hover {
@@ -210,11 +290,13 @@ CHARACTER PANEL
 }
 
 .character-card.active {
-    border: 1px solid #668ac2;
+    border-color: #668ac2;
+    background: #263247;
 }
 
 .character-name {
     font-weight: bold;
+    font-size: 16px;
 }
 
 .character-role {
@@ -227,30 +309,154 @@ CHARACTER PANEL
     font-size: 12px;
     color: #b7c0ce;
     margin-top: 7px;
+    line-height: 1.4;
 }
 
+.character-location {
+    font-size: 11px;
+    color: #7f9ac1;
+    margin-top: 8px;
+}
 
 /* =========================================================
-TRAVEL
+EVENT POPUP
 ========================================================= */
 
-.travel {
-    padding: 10px;
-    border-top: 1px solid #303744;
-}
-
-.travel select {
-    width: 100%;
+.event-panel {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: min(430px, calc(100vw - 36px));
     background: #202631;
-    color: white;
-    border: 1px solid #3b4452;
-    border-radius: 9px;
-    padding: 9px;
+    border: 1px solid #52647d;
+    border-radius: 15px;
+    padding: 17px;
+    z-index: 3000;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    display: none;
 }
 
+.event-panel.open {
+    display: block;
+}
+
+.event-panel h2 {
+    margin: 0 35px 8px 0;
+}
+
+.event-panel p {
+    color: #cbd3df;
+    line-height: 1.55;
+}
+
+.event-close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 6px 9px;
+    background: transparent;
+    font-size: 18px;
+}
+
+.event-hint {
+    background: #29203d;
+    border-radius: 10px;
+    padding: 11px;
+    color: #c8b7e6;
+    margin-top: 12px;
+}
+
+.portal-button {
+    margin-top: 12px;
+    width: 100%;
+    background: #5b3c82;
+}
 
 /* =========================================================
-STORY FULL SCREEN
+DIMENSION MODAL
+========================================================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.78);
+    z-index: 4000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modal-box {
+    width: min(720px, 92%);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #191f2a;
+    border: 1px solid #343e4d;
+    border-radius: 17px;
+    padding: 23px;
+}
+
+.modal-box h2 {
+    margin-top: 0;
+}
+
+.modal-description {
+    color: #aeb8c8;
+    line-height: 1.5;
+}
+
+.dimension-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.dimension-card {
+    background: #222936;
+    border: 1px solid #343e4d;
+    padding: 14px;
+    border-radius: 12px;
+}
+
+.dimension-card.current {
+    border-color: #728fc0;
+}
+
+.dimension-card h3 {
+    margin: 0 0 5px;
+}
+
+.dimension-card p {
+    color: #9da8b8;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.dimension-hint {
+    color: #bba9dc;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.dimension-card button {
+    width: 100%;
+    margin-top: 10px;
+    background: #354765;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
+/* =========================================================
+STORY
 ========================================================= */
 
 .story-overlay {
@@ -258,7 +464,7 @@ STORY FULL SCREEN
     position: fixed;
     inset: 0;
     background: #080a0f;
-    z-index: 1000;
+    z-index: 5000;
 }
 
 .story-overlay.open {
@@ -268,18 +474,19 @@ STORY FULL SCREEN
 .story-main {
     flex: 1;
     overflow-y: auto;
-    padding: 35px;
+    padding: 30px;
 }
 
 .story-header {
     display: flex;
     justify-content: space-between;
+    gap: 20px;
     align-items: center;
     margin-bottom: 30px;
 }
 
 .story-title {
-    font-size: 34px;
+    font-size: 32px;
     font-weight: bold;
 }
 
@@ -327,10 +534,10 @@ STORY FULL SCREEN
 }
 
 .story-side {
-    width: 330px;
+    width: 320px;
     border-left: 1px solid #303744;
     background: #11151d;
-    padding: 20px;
+    padding: 18px;
     overflow-y: auto;
 }
 
@@ -341,7 +548,7 @@ STORY FULL SCREEN
 }
 
 .tree-node {
-    padding: 10px;
+    padding: 9px;
     margin-bottom: 7px;
     border-radius: 8px;
     background: #1c222c;
@@ -360,10 +567,6 @@ STORY FULL SCREEN
 
 .tree-node.ending {
     background: #34284d;
-}
-
-.tree-node.hidden {
-    opacity: 0.35;
 }
 
 .story-controls {
@@ -387,37 +590,11 @@ STORY FULL SCREEN
     margin-top: 25px;
 }
 
-.hidden {
-    display: none !important;
-}
-
-
 /* =========================================================
-MODAL
+CHARACTER MODAL
 ========================================================= */
 
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.75);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal.open {
-    display: flex;
-}
-
-.modal-box {
-    width: min(600px, 90%);
-    background: #1a202b;
-    padding: 25px;
-    border-radius: 15px;
-}
-
-.modal-box input,
+input,
 .modal-box textarea {
     width: 100%;
     margin: 8px 0 15px;
@@ -426,150 +603,405 @@ MODAL
     border: 1px solid #3c4655;
     color: white;
     border-radius: 8px;
+    outline: none;
 }
 
 .modal-box textarea {
     min-height: 100px;
 }
 
-.modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+/* =========================================================
+MOBILE
+========================================================= */
+
+@media(max-width: 900px) {
+
+    .characters {
+        width: 220px;
+    }
+
+    .sidebar {
+        width: 210px;
+    }
+
 }
+
+@media(max-width: 700px) {
+
+    .sidebar {
+        width: 180px;
+    }
+
+    .characters {
+        display: none;
+    }
+
+    .story-side {
+        display: none;
+    }
+
+}
+
+/* =========================================================
+HIDDEN
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
 </style>
+
 </head>
 
 <body>
 
 <div class="app">
 
-    <!-- =====================================================
-    SIDEBAR
-    ====================================================== -->
+<!-- =====================================================
+SIDEBAR
+===================================================== -->
 
-    <aside class="sidebar">
+<aside class="sidebar">
 
-        <div class="logo">
-            🌎 School World
+    <div class="logo">
+        🌎 School World
+    </div>
+
+    <div class="world-box">
+
+        <div>
+            World:
+            <strong id="worldNumber">1</strong>
         </div>
 
-        <div class="world-box">
-            <div>World: <strong id="worldNumber">1</strong></div>
-            <div>World ID: <strong id="worldId">---</strong></div>
-            <div>Location: <strong id="currentLocation">Classroom</strong></div>
+        <div>
+            World ID:
+            <strong id="worldId">---</strong>
         </div>
 
-        <div class="menu-title">Menu</div>
-
-        <button class="menu-button story-button"
-                onclick="openStoryMode()">
-            🌌 Story Mode
-        </button>
-
-        <button class="menu-button"
-                onclick="openCreateCharacter()">
-            👤 Create Character
-        </button>
-
-        <button class="menu-button"
-                onclick="advanceWorld()">
-            🔄 Advance World
-        </button>
-
-        <button class="menu-button"
-                onclick="showBackgroundEvents()">
-            📰 World Events
-        </button>
-
-        <div class="menu-title">Travel</div>
-
-        <div class="travel">
-            <select id="travelSelect"
-                    onchange="travel(this.value)">
-            </select>
+        <div>
+            Location:
+            <strong id="currentLocation">
+                Classroom
+            </strong>
         </div>
 
-        <button class="reset-world"
-                onclick="resetWorld()">
-            🌌 Reset World
-        </button>
+    </div>
 
-    </aside>
+    <div class="dimension-box">
+
+        <div class="dimension-name"
+             id="dimensionName">
+            Earth 1
+        </div>
+
+        <div class="dimension-number"
+             id="dimensionNumber">
+            Dimension 1
+        </div>
+
+    </div>
+
+    <div class="menu-title">
+        World
+    </div>
+
+    <button class="menu-button story-button"
+            onclick="openStoryMode()">
+        📖 Story Mode
+    </button>
+
+    <button class="menu-button"
+            onclick="openCreateCharacter()">
+        👤 Create Character
+    </button>
+
+    <button class="menu-button"
+            onclick="advanceWorld()">
+        🔄 Advance World
+    </button>
+
+    <button class="menu-button event-button"
+            onclick="createMultiverseEvent()">
+        ⚡ Multiversal Event
+    </button>
+
+    <button class="menu-button"
+            onclick="showEvents()">
+        📰 World Events
+    </button>
+
+    <button class="menu-button"
+            onclick="showHints()">
+        🔎 Dimension Hints
+    </button>
+
+    <div class="menu-title">
+        School Travel
+    </div>
+
+    <div class="travel-box">
+
+        <select id="travelSelect"
+                onchange="travel(this.value)">
+        </select>
+
+    </div>
+
+    <div class="menu-title">
+        Dimension Travel
+    </div>
+
+    <button class="menu-button dimension-button"
+            onclick="openDimensions()">
+        🌌 Travel Between Dimensions
+    </button>
+
+    <button class="reset-world"
+            onclick="resetWorld()">
+        💥 Reset Multiverse
+    </button>
+
+</aside>
 
 
-    <!-- =====================================================
-    CHAT
-    ====================================================== -->
+<!-- =====================================================
+MAIN CHAT
+===================================================== -->
 
-    <main class="main">
+<main class="main">
 
-        <div class="topbar">
+    <div class="topbar">
 
-            <div>
-                <strong id="selectedCharacterName">
-                    Select a character
-                </strong>
+        <div>
 
-                <div class="location"
-                     id="selectedCharacterRole">
-                </div>
+            <div class="topbar-name"
+                 id="selectedCharacterName">
+                Select a character
             </div>
 
-            <div>
-                <button onclick="newConversation()">
-                    New Text
-                </button>
-
-                <button onclick="resetConversation()">
-                    Reset Convo
-                </button>
+            <div class="location"
+                 id="selectedCharacterRole">
+                Choose someone on the right.
             </div>
 
         </div>
 
+        <div>
 
-        <section class="chat" id="chat"></section>
+            <button onclick="newConversation()">
+                New Text
+            </button>
 
-
-        <div class="composer">
-
-            <textarea
-                id="messageInput"
-                placeholder="Talk to the character..."
-                onkeydown="handleEnter(event)"
-            ></textarea>
-
-            <button class="send"
-                    onclick="sendMessage()">
-                Send
+            <button onclick="resetConversation()">
+                Reset Convo
             </button>
 
         </div>
 
-    </main>
+    </div>
 
+    <section class="chat"
+             id="chat">
 
-    <!-- =====================================================
-    CHARACTERS
-    ====================================================== -->
+        <div class="message system">
 
-    <aside class="characters">
+            <div class="message-name">
+                School World
+            </div>
 
-        <div class="menu-title">
-            Characters
+            Select a character to begin.
+
         </div>
 
-        <div id="characterList"></div>
+    </section>
 
-    </aside>
+    <div class="composer">
+
+        <textarea
+            id="messageInput"
+            placeholder="Talk to the character..."
+            onkeydown="handleEnter(event)"
+        ></textarea>
+
+        <button class="send"
+                onclick="sendMessage()">
+            Send
+        </button>
+
+    </div>
+
+</main>
+
+
+<!-- =====================================================
+CHARACTERS
+===================================================== -->
+
+<aside class="characters">
+
+    <div class="menu-title">
+        Characters
+    </div>
+
+    <div id="characterList"></div>
+
+</aside>
 
 </div>
 
 
-<!-- =========================================================
+<!-- =====================================================
+EVENT PANEL
+===================================================== -->
+
+<div class="event-panel"
+     id="eventPanel">
+
+    <button class="event-close"
+            onclick="closeEvent()">
+        ✕
+    </button>
+
+    <h2 id="eventTitle">
+        Event
+    </h2>
+
+    <p id="eventDescription">
+    </p>
+
+    <div class="event-hint"
+         id="eventHint">
+    </div>
+
+    <button class="portal-button hidden"
+            id="portalButton"
+            onclick="travelThroughPortal()">
+        🌀 Enter Portal
+    </button>
+
+</div>
+
+
+<!-- =====================================================
+DIMENSION MODAL
+===================================================== -->
+
+<div class="modal"
+     id="dimensionModal">
+
+    <div class="modal-box">
+
+        <h2>
+            🌌 Multiverse
+        </h2>
+
+        <div class="modal-description">
+            Explore dimensions you have discovered.
+            Each dimension has its own characters,
+            memories, events, locations, and mysteries.
+        </div>
+
+        <div class="dimension-list"
+             id="dimensionList">
+        </div>
+
+        <div class="modal-actions">
+
+            <button onclick="closeDimensions()">
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+HINT MODAL
+===================================================== -->
+
+<div class="modal"
+     id="hintModal">
+
+    <div class="modal-box">
+
+        <h2>
+            🔎 Dimension Hints
+        </h2>
+
+        <div id="hintList">
+        </div>
+
+        <div class="modal-actions">
+
+            <button onclick="closeHints()">
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+CHARACTER MODAL
+===================================================== -->
+
+<div class="modal"
+     id="characterModal">
+
+    <div class="modal-box">
+
+        <h2>
+            👤 Create Character
+        </h2>
+
+        <input
+            id="newName"
+            placeholder="Name">
+
+        <input
+            id="newRole"
+            placeholder="Role">
+
+        <textarea
+            id="newPersonality"
+            placeholder="Personality"></textarea>
+
+        <textarea
+            id="newDescription"
+            placeholder="Description"></textarea>
+
+        <input
+            id="newTraits"
+            placeholder="Traits separated by commas">
+
+        <div class="modal-actions">
+
+            <button onclick="closeCreateCharacter()">
+                Cancel
+            </button>
+
+            <button onclick="createCharacter()">
+                Create
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
 STORY MODE
-========================================================== -->
+===================================================== -->
 
 <div class="story-overlay"
      id="storyOverlay">
@@ -579,6 +1011,7 @@ STORY MODE
         <div class="story-header">
 
             <div>
+
                 <div class="story-title"
                      id="storyTitle">
                     Story Mode
@@ -587,6 +1020,7 @@ STORY MODE
                 <div class="story-theme"
                      id="storyTheme">
                 </div>
+
             </div>
 
             <div class="story-controls">
@@ -604,7 +1038,6 @@ STORY MODE
             </div>
 
         </div>
-
 
         <div class="story-scene">
 
@@ -626,7 +1059,6 @@ STORY MODE
 
     </section>
 
-
     <aside class="story-side">
 
         <div class="tree-title">
@@ -640,54 +1072,15 @@ STORY MODE
 </div>
 
 
-<!-- =========================================================
-CHARACTER MODAL
-========================================================== -->
-
-<div class="modal"
-     id="characterModal">
-
-    <div class="modal-box">
-
-        <h2>Create Character</h2>
-
-        <input id="newName"
-               placeholder="Name">
-
-        <input id="newRole"
-               placeholder="Role">
-
-        <textarea id="newPersonality"
-                  placeholder="Personality"></textarea>
-
-        <textarea id="newDescription"
-                  placeholder="Description"></textarea>
-
-        <input id="newTraits"
-               placeholder="Traits separated by commas">
-
-        <div class="modal-actions">
-
-            <button onclick="closeCreateCharacter()">
-                Cancel
-            </button>
-
-            <button onclick="createCharacter()">
-                Create
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-
 <script>
 
 let world = null;
+
 let selectedCharacter = null;
+
 let story = null;
+
+let lastPortalTarget = null;
 
 
 /* =========================================================
@@ -696,55 +1089,125 @@ LOAD WORLD
 
 async function loadWorld() {
 
-    const response = await fetch("/world");
+    try {
 
-    world = await response.json();
+        const response =
+            await fetch("/world");
 
-    updateWorldUI();
+        if (!response.ok) {
+            throw new Error("World request failed.");
+        }
+
+        world =
+            await response.json();
+
+        updateWorldUI();
+
+        if (!selectedCharacter &&
+            world.characters &&
+            world.characters.length > 0) {
+
+            selectCharacter(
+                world.characters[0].id
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        addTemporaryMessage(
+            "System",
+            "Could not load the school world.",
+            "system"
+        );
+    }
 }
 
 
 /* =========================================================
-UPDATE UI
+UPDATE WORLD
 ========================================================= */
 
 function updateWorldUI() {
 
-    document.getElementById("worldNumber").textContent =
+    if (!world) return;
+
+    document.getElementById(
+        "worldNumber"
+    ).textContent =
         world.world_number;
 
-    document.getElementById("worldId").textContent =
+    document.getElementById(
+        "worldId"
+    ).textContent =
         world.world_id;
 
-    document.getElementById("currentLocation").textContent =
+    document.getElementById(
+        "currentLocation"
+    ).textContent =
         world.location;
 
-    const travelSelect =
-        document.getElementById("travelSelect");
+    const universe =
+        world.universe;
 
-    travelSelect.innerHTML = "";
+    if (universe) {
 
-    world.locations.forEach(location => {
+        document.getElementById(
+            "dimensionName"
+        ).textContent =
+            universe.name;
 
-        const option = document.createElement("option");
+        document.getElementById(
+            "dimensionNumber"
+        ).textContent =
+            `Dimension ${universe.number}`;
+    }
 
-        option.value = location;
-        option.textContent = location;
-
-        if (location === world.location) {
-            option.selected = true;
-        }
-
-        travelSelect.appendChild(option);
-
-    });
-
+    renderLocations();
 
     renderCharacters();
+}
 
-    if (world.story && world.story.tree) {
-        story = world.story;
-    }
+
+/* =========================================================
+LOCATIONS
+========================================================= */
+
+function renderLocations() {
+
+    const select =
+        document.getElementById(
+            "travelSelect"
+        );
+
+    select.innerHTML = "";
+
+    (world.locations || []).forEach(
+        location => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                location;
+
+            option.textContent =
+                location;
+
+            if (location === world.location) {
+
+                option.selected =
+                    true;
+            }
+
+            select.appendChild(
+                option
+            );
+        }
+    );
 }
 
 
@@ -755,41 +1218,70 @@ CHARACTERS
 function renderCharacters() {
 
     const container =
-        document.getElementById("characterList");
+        document.getElementById(
+            "characterList"
+        );
 
     container.innerHTML = "";
 
-    world.characters.forEach(character => {
+    if (!world.characters ||
+        world.characters.length === 0) {
 
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "character-card" +
-            (selectedCharacter &&
-             selectedCharacter.id === character.id
-                ? " active"
-                : "");
-
-        card.innerHTML = `
-            <div class="character-name">
-                ${escapeHtml(character.name)}
-            </div>
-
-            <div class="character-role">
-                ${escapeHtml(character.role)}
-            </div>
-
-            <div class="character-personality">
-                ${escapeHtml(character.personality)}
+        container.innerHTML = `
+            <div class="message system">
+                No characters exist.
             </div>
         `;
 
-        card.onclick = () =>
-            selectCharacter(character.id);
+        return;
+    }
 
-        container.appendChild(card);
-    });
+    world.characters.forEach(
+        character => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "character-card" +
+                (
+                    selectedCharacter &&
+                    selectedCharacter.id === character.id
+                        ? " active"
+                        : ""
+                );
+
+            card.innerHTML = `
+
+                <div class="character-name">
+                    ${escapeHtml(character.name)}
+                </div>
+
+                <div class="character-role">
+                    ${escapeHtml(character.role)}
+                </div>
+
+                <div class="character-personality">
+                    ${escapeHtml(character.personality)}
+                </div>
+
+                <div class="character-location">
+                    📍 School
+                </div>
+            `;
+
+            card.onclick = () =>
+                selectCharacter(
+                    character.id
+                );
+
+            container.appendChild(
+                card
+            );
+        }
+    );
 }
 
 
@@ -800,15 +1292,19 @@ SELECT CHARACTER
 function selectCharacter(id) {
 
     const character =
-        world.characters.find(c => c.id === id);
+        world.characters.find(
+            c => c.id === id
+        );
 
     if (!character) return;
 
-    selectedCharacter = character;
+    selectedCharacter =
+        character;
 
     document.getElementById(
         "selectedCharacterName"
-    ).textContent = character.name;
+    ).textContent =
+        character.name;
 
     document.getElementById(
         "selectedCharacterRole"
@@ -828,21 +1324,19 @@ CONVERSATION
 function renderConversation() {
 
     const chat =
-        document.getElementById("chat");
+        document.getElementById(
+            "chat"
+        );
 
     chat.innerHTML = "";
 
     if (!selectedCharacter) {
 
-        chat.innerHTML = `
-            <div class="message ai">
-                <div class="message-name">
-                    School World
-                </div>
-
-                Choose a character on the right to begin a conversation.
-            </div>
-        `;
+        addTemporaryMessage(
+            "School World",
+            "Choose a character on the right.",
+            "system"
+        );
 
         return;
     }
@@ -850,34 +1344,55 @@ function renderConversation() {
     const conversation =
         selectedCharacter.conversation || [];
 
-    conversation.forEach(item => {
+    if (conversation.length === 0) {
 
-        const message =
-            document.createElement("div");
+        addTemporaryMessage(
+            selectedCharacter.name,
+            "Hey! What's up?",
+            "ai"
+        );
 
-        message.className =
-            "message " +
-            (item.role === "user"
-                ? "user"
-                : "ai");
+        return;
+    }
 
-        const name =
-            item.role === "user"
-                ? "You"
-                : selectedCharacter.name;
+    conversation.forEach(
+        item => {
 
-        message.innerHTML = `
-            <div class="message-name">
-                ${escapeHtml(name)}
-            </div>
+            const message =
+                document.createElement(
+                    "div"
+                );
 
-            ${escapeHtml(item.content)}
-        `;
+            message.className =
+                "message " +
+                (
+                    item.role === "user"
+                        ? "user"
+                        : "ai"
+                );
 
-        chat.appendChild(message);
-    });
+            const name =
+                item.role === "user"
+                    ? "You"
+                    : selectedCharacter.name;
 
-    chat.scrollTop = chat.scrollHeight;
+            message.innerHTML = `
+
+                <div class="message-name">
+                    ${escapeHtml(name)}
+                </div>
+
+                ${escapeHtml(item.content)}
+            `;
+
+            chat.appendChild(
+                message
+            );
+        }
+    );
+
+    chat.scrollTop =
+        chat.scrollHeight;
 }
 
 
@@ -889,13 +1404,17 @@ async function sendMessage() {
 
     if (!selectedCharacter) {
 
-        alert("Choose a character first.");
+        alert(
+            "Choose a character first."
+        );
 
         return;
     }
 
     const input =
-        document.getElementById("messageInput");
+        document.getElementById(
+            "messageInput"
+        );
 
     const message =
         input.value.trim();
@@ -904,22 +1423,35 @@ async function sendMessage() {
 
     input.value = "";
 
-    addTemporaryMessage("You", message, "user");
+    addTemporaryMessage(
+        "You",
+        message,
+        "user"
+    );
 
     try {
 
         const response =
-            await fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    character_id:
-                        selectedCharacter.id,
-                    message: message
-                })
-            });
+            await fetch(
+                "/chat",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            character_id:
+                                selectedCharacter.id,
+
+                            message:
+                                message
+                        })
+                }
+            );
 
         const result =
             await response.json();
@@ -928,8 +1460,9 @@ async function sendMessage() {
 
             addTemporaryMessage(
                 "Error",
-                result.error || "AI request failed.",
-                "ai"
+                result.error ||
+                    "AI request failed.",
+                "system"
             );
 
             return;
@@ -940,10 +1473,13 @@ async function sendMessage() {
 
         const index =
             world.characters.findIndex(
-                c => c.id === selectedCharacter.id
+                c =>
+                    c.id ===
+                    selectedCharacter.id
             );
 
         if (index !== -1) {
+
             world.characters[index] =
                 selectedCharacter;
         }
@@ -955,24 +1491,37 @@ async function sendMessage() {
         addTemporaryMessage(
             "Error",
             error.toString(),
-            "ai"
+            "system"
         );
     }
 }
 
 
-function addTemporaryMessage(name, text, type) {
+/* =========================================================
+TEMP MESSAGE
+========================================================= */
+
+function addTemporaryMessage(
+    name,
+    text,
+    type
+) {
 
     const chat =
-        document.getElementById("chat");
+        document.getElementById(
+            "chat"
+        );
 
     const message =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     message.className =
         "message " + type;
 
     message.innerHTML = `
+
         <div class="message-name">
             ${escapeHtml(name)}
         </div>
@@ -980,15 +1529,25 @@ function addTemporaryMessage(name, text, type) {
         ${escapeHtml(text)}
     `;
 
-    chat.appendChild(message);
+    chat.appendChild(
+        message
+    );
 
-    chat.scrollTop = chat.scrollHeight;
+    chat.scrollTop =
+        chat.scrollHeight;
 }
 
 
+/* =========================================================
+ENTER
+========================================================= */
+
 function handleEnter(event) {
 
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+        event.key === "Enter" &&
+        !event.shiftKey
+    ) {
 
         event.preventDefault();
 
@@ -998,7 +1557,7 @@ function handleEnter(event) {
 
 
 /* =========================================================
-NEW TEXT
+NEW CONVERSATION
 ========================================================= */
 
 function newConversation() {
@@ -1021,7 +1580,9 @@ async function resetConversation() {
 
     if (!selectedCharacter) {
 
-        alert("Choose a character first.");
+        alert(
+            "Choose a character first."
+        );
 
         return;
     }
@@ -1032,16 +1593,23 @@ async function resetConversation() {
         return;
     }
 
-    await fetch("/conversation/reset", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            character_id:
-                selectedCharacter.id
-        })
-    });
+    await fetch(
+        "/conversation/reset",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify({
+                    character_id:
+                        selectedCharacter.id
+                })
+        }
+    );
 
     selectedCharacter.conversation = [];
 
@@ -1050,433 +1618,589 @@ async function resetConversation() {
 
 
 /* =========================================================
-TRAVEL
+SCHOOL TRAVEL
 ========================================================= */
 
 async function travel(location) {
 
-    const response =
-        await fetch("/world/travel", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                location: location
-            })
-        });
+    try {
 
-    const result =
-        await response.json();
+        const response =
+            await fetch(
+                "/world/travel",
+                {
+                    method: "POST",
 
-    if (result.success) {
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-        world.location =
-            result.location;
+                    body:
+                        JSON.stringify({
+                            location:
+                                location
+                        })
+                }
+            );
 
-        document.getElementById(
-            "currentLocation"
-        ).textContent =
-            result.location;
+        const result =
+            await response.json();
+
+        if (result.success) {
+
+            world.location =
+                result.location;
+
+            document.getElementById(
+                "currentLocation"
+            ).textContent =
+                result.location;
+
+            addTemporaryMessage(
+                "School World",
+                `You traveled to ${result.location}.`,
+                "system"
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
     }
 }
 
 
 /* =========================================================
-BACKGROUND WORLD
+ADVANCE WORLD
 ========================================================= */
 
 async function advanceWorld() {
 
     const response =
-        await fetch("/world/advance", {
-            method: "POST"
-        });
+        await fetch(
+            "/world/advance",
+            {
+                method: "POST"
+            }
+        );
 
     const result =
         await response.json();
 
     if (result.event) {
 
-        alert(
-            `${result.event.characters.join(" & ")}\n\n` +
-            `${result.event.event}`
-        );
-    }
-}
+        showEvent({
 
+            title:
+                "Background Interaction",
 
-function showBackgroundEvents() {
+            description:
+                `${result.event.characters.join(" & ")} at ${result.event.location}\n\n${result.event.event}`,
 
-    if (!world.background_events ||
-        world.background_events.length === 0) {
+            hint:
+                "The school continues even when you aren't involved.",
 
-        alert("No background events yet.");
+            portal_available:
+                false,
 
-        return;
-    }
-
-    const recent =
-        world.background_events
-            .slice(-8)
-            .map(e =>
-                `${e.characters.join(" & ")} — ${e.location}\n${e.event}`
-            )
-            .join("\n\n");
-
-    alert(recent);
-}
-
-
-/* =========================================================
-WORLD RESET
-========================================================= */
-
-async function resetWorld() {
-
-    if (!confirm(
-        "Create a completely new world?\n\n" +
-        "This clears character memories, conversations, " +
-        "world events, and the current story."
-    )) {
-        return;
-    }
-
-    const response =
-        await fetch("/world/reset", {
-            method: "POST"
+            target_universe:
+                null
         });
-
-    const result =
-        await response.json();
-
-    if (result.success) {
-
-        selectedCharacter = null;
-
-        await loadWorld();
-
-        document.getElementById(
-            "chat"
-        ).innerHTML = `
-            <div class="message ai">
-                <div class="message-name">
-                    New Universe
-                </div>
-
-                World #${result.world_number} created.
-                All memories and story progression were reset.
-            </div>
-        `;
     }
 }
 
 
 /* =========================================================
-STORY MODE
+MULTIVERSAL EVENT
 ========================================================= */
 
-async function openStoryMode() {
+async function createMultiverseEvent() {
 
-    document.getElementById(
-        "storyOverlay"
-    ).classList.add("open");
+    const button =
+        document.querySelector(
+            ".event-button"
+        );
+
+    button.disabled =
+        true;
+
+    button.textContent =
+        "⚡ Creating...";
 
     try {
 
         const response =
-            await fetch("/story/tree");
+            await fetch(
+                "/multiverse/event",
+                {
+                    method: "POST"
+                }
+            );
 
         const result =
             await response.json();
 
-        if (!result.tree ||
-            !result.tree.nodes ||
-            Object.keys(result.tree.nodes).length === 0) {
+        if (!response.ok) {
 
-            await startNewStory();
+            alert(
+                result.error ||
+                "Could not create event."
+            );
 
-        } else {
-
-            story = {
-                active: result.active,
-                title: result.title,
-                theme: result.theme,
-                tree: result.tree,
-                seen_nodes: result.seen_nodes,
-                history: result.history,
-                ending: result.ending,
-                current_node:
-                    result.history.length > 0
-                        ? result.history[result.history.length - 1].next
-                        : result.tree.start
-            };
-
-            renderStory();
+            return;
         }
 
-    } catch (error) {
-
-        console.error(error);
-
-        await startNewStory();
-    }
-}
-
-
-function closeStoryMode() {
-
-    document.getElementById(
-        "storyOverlay"
-    ).classList.remove("open");
-}
-
-
-async function startNewStory() {
-
-    const response =
-        await fetch("/story/start", {
-            method: "POST"
-        });
-
-    const result =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            result.error ||
-            "Could not create story."
+        showEvent(
+            result.event
         );
 
-        return;
+    } finally {
+
+        button.disabled =
+            false;
+
+        button.textContent =
+            "⚡ Multiversal Event";
     }
-
-    story = result.story;
-
-    renderStory();
 }
 
 
 /* =========================================================
-STORY RENDER
+EVENT DISPLAY
 ========================================================= */
 
-function renderStory() {
-
-    if (!story) return;
+function showEvent(event) {
 
     document.getElementById(
-        "storyTitle"
+        "eventTitle"
     ).textContent =
-        story.title || "Story Mode";
+        event.title ||
+        "Multiversal Event";
 
     document.getElementById(
-        "storyTheme"
+        "eventDescription"
     ).textContent =
-        story.theme || "";
-
-    const nodes =
-        story.tree.nodes || {};
-
-    const current =
-        nodes[story.current_node];
-
-    if (!current) {
-
-        return;
-    }
+        event.description ||
+        "";
 
     document.getElementById(
-        "sceneTitle"
+        "eventHint"
     ).textContent =
-        current.title;
+        "🔎 Hint: " +
+        (
+            event.hint ||
+            "Something strange is happening."
+        );
 
-    document.getElementById(
-        "sceneText"
-    ).textContent =
-        current.text;
+    const portalButton =
+        document.getElementById(
+            "portalButton"
+        );
 
-    const choices =
-        document.getElementById("choices");
+    if (
+        event.portal_available &&
+        event.target_universe
+    ) {
 
-    choices.innerHTML = "";
+        lastPortalTarget =
+            `earth_${event.target_universe}`;
 
-    const endingBox =
-        document.getElementById("endingBox");
+        portalButton.classList.remove(
+            "hidden"
+        );
 
-    endingBox.classList.add("hidden");
-
-    if (current.ending) {
-
-        endingBox.classList.remove("hidden");
-
-        endingBox.innerHTML = `
-            <h2>${escapeHtml(current.title)}</h2>
-
-            <p>
-                ${escapeHtml(current.text)}
-            </p>
-
-            <button onclick="replayStory()">
-                🔁 Replay This World
-            </button>
-        `;
+        portalButton.textContent =
+            `🌀 Enter Portal to Earth ${event.target_universe}`;
 
     } else {
 
-        current.choices.forEach(choice => {
+        lastPortalTarget =
+            null;
 
-            const button =
-                document.createElement("button");
-
-            button.className = "choice";
-
-            button.innerHTML = `
-                <span class="choice-letter">
-                    ${choice.id}.
-                </span>
-
-                ${escapeHtml(choice.text)}
-            `;
-
-            button.onclick = () =>
-                chooseStory(choice.id);
-
-            choices.appendChild(button);
-        });
-    }
-
-    renderStoryTree();
-}
-
-
-/* =========================================================
-STORY CHOICE
-========================================================= */
-
-async function chooseStory(choice) {
-
-    const response =
-        await fetch("/story/choose", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                choice: choice
-            })
-        });
-
-    const result =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            result.error ||
-            "Choice failed."
+        portalButton.classList.add(
+            "hidden"
         );
-
-        return;
     }
 
-    story = result.story;
-
-    renderStory();
+    document.getElementById(
+        "eventPanel"
+    ).classList.add(
+        "open"
+    );
 }
 
 
-/* =========================================================
-STORY TREE DISPLAY
-========================================================= */
+function closeEvent() {
 
-function renderStoryTree() {
-
-    const container =
-        document.getElementById("storyTree");
-
-    container.innerHTML = "";
-
-    if (!story || !story.tree) return;
-
-    const nodes =
-        story.tree.nodes || {};
-
-    const seen =
-        story.seen_nodes || [];
-
-    Object.entries(nodes).forEach(
-        ([id, node]) => {
-
-            const div =
-                document.createElement("div");
-
-            let classes = "tree-node";
-
-            if (seen.includes(id)) {
-                classes += " seen";
-            } else {
-                classes += " hidden";
-            }
-
-            if (id === story.current_node) {
-                classes += " current";
-            }
-
-            if (node.ending) {
-                classes += " ending";
-            }
-
-            div.className = classes;
-
-            let label = "";
-
-            if (id === story.current_node) {
-                label = "▶ ";
-            }
-
-            if (seen.includes(id)) {
-                label += node.title;
-            } else {
-                label += "???";
-            }
-
-            div.textContent = label;
-
-            container.appendChild(div);
-        }
+    document.getElementById(
+        "eventPanel"
+    ).classList.remove(
+        "open"
     );
 }
 
 
 /* =========================================================
-REPLAY
+PORTAL TRAVEL
 ========================================================= */
 
-async function replayStory() {
+async function travelThroughPortal() {
 
-    const response =
-        await fetch("/story/replay", {
-            method: "POST"
+    if (!lastPortalTarget)
+        return;
+
+    await travelDimension(
+        lastPortalTarget
+    );
+
+    closeEvent();
+}
+
+
+/* =========================================================
+EVENT HISTORY
+========================================================= */
+
+function showEvents() {
+
+    const events =
+        world.events || [];
+
+    if (events.length === 0) {
+
+        showEvent({
+
+            title:
+                "No Events Yet",
+
+            description:
+                "Nothing strange has happened in this dimension yet.",
+
+            hint:
+                "Try the Multiversal Event button."
         });
-
-    const result =
-        await response.json();
-
-    if (!response.ok) {
-
-        alert(
-            result.error ||
-            "Unable to replay story."
-        );
 
         return;
     }
 
-    story = result.story;
+    const latest =
+        events
+            .slice()
+            .reverse()
+            .slice(0, 5);
 
-    renderStory();
+    const text =
+        latest.map(
+            e =>
+                `⚡ ${e.title}\n${e.description}`
+        ).join(
+            "\n\n"
+        );
+
+    showEvent({
+
+        title:
+            "Recent Multiversal Events",
+
+        description:
+            text,
+
+        hint:
+            "The more events you encounter, the more clues you may discover."
+    });
+}
+
+
+/* =========================================================
+HINTS
+========================================================= */
+
+function showHints() {
+
+    const modal =
+        document.getElementById(
+            "hintModal"
+        );
+
+    const container =
+        document.getElementById(
+            "hintList"
+        );
+
+    const hints =
+        world.hints || [];
+
+    container.innerHTML = "";
+
+    if (hints.length === 0) {
+
+        container.innerHTML =
+            "<p>No clues discovered yet.</p>";
+
+    } else {
+
+        hints
+            .slice()
+            .reverse()
+            .forEach(
+                hint => {
+
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
+
+                    div.className =
+                        "dimension-card";
+
+                    div.innerHTML = `
+                        <div class="dimension-hint">
+                            🔎 ${escapeHtml(hint)}
+                        </div>
+                    `;
+
+                    container.appendChild(
+                        div
+                    );
+                }
+            );
+    }
+
+    modal.classList.add(
+        "open"
+    );
+}
+
+
+function closeHints() {
+
+    document.getElementById(
+        "hintModal"
+    ).classList.remove(
+        "open"
+    );
+}
+
+
+/* =========================================================
+DIMENSIONS
+========================================================= */
+
+async function openDimensions() {
+
+    const response =
+        await fetch(
+            "/multiverse"
+        );
+
+    const result =
+        await response.json();
+
+    const container =
+        document.getElementById(
+            "dimensionList"
+        );
+
+    container.innerHTML = "";
+
+    result.universes.forEach(
+        universe => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "dimension-card" +
+                (
+                    universe.id ===
+                    result.current_universe
+                        ? " current"
+                        : ""
+                );
+
+            const latestHint =
+                universe.hints &&
+                universe.hints.length
+                    ? universe.hints[
+                        universe.hints.length - 1
+                    ]
+                    : "No clues discovered.";
+
+            card.innerHTML = `
+
+                <h3>
+                    🌎 ${escapeHtml(universe.name)}
+                </h3>
+
+                <p>
+                    ${escapeHtml(
+                        universe.description
+                    )}
+                </p>
+
+                <div class="dimension-hint">
+                    🔎 ${escapeHtml(
+                        latestHint
+                    )}
+                </div>
+
+                ${
+                    universe.id ===
+                    result.current_universe
+
+                    ? `
+                        <button disabled>
+                            You are here
+                        </button>
+                    `
+
+                    : `
+                        <button
+                            onclick="travelDimension('${universe.id}')">
+                            🌀 Travel Here
+                        </button>
+                    `
+                }
+
+            `;
+
+            container.appendChild(
+                card
+            );
+        }
+    );
+
+    document.getElementById(
+        "dimensionModal"
+    ).classList.add(
+        "open"
+    );
+}
+
+
+function closeDimensions() {
+
+    document.getElementById(
+        "dimensionModal"
+    ).classList.remove(
+        "open"
+    );
+}
+
+
+/* =========================================================
+TRAVEL BETWEEN DIMENSIONS
+========================================================= */
+
+async function travelDimension(
+    universeId
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                "/multiverse/travel",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            universe:
+                                universeId
+                        })
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                result.error ||
+                "Dimension travel failed."
+            );
+
+            return;
+        }
+
+        world = {
+
+            ...world,
+
+            universe:
+                result.universe,
+
+            characters:
+                result.universe.characters,
+
+            locations:
+                result.universe.locations,
+
+            location:
+                result.universe.player_location,
+
+            background_events:
+                result.universe.background_events,
+
+            events:
+                result.universe.events,
+
+            hints:
+                result.universe.hints,
+
+            current_universe:
+                result.to
+        };
+
+        selectedCharacter = null;
+
+        updateWorldUI();
+
+        if (
+            world.characters &&
+            world.characters.length
+        ) {
+
+            selectCharacter(
+                world.characters[0].id
+            );
+        }
+
+        closeDimensions();
+
+        showEvent({
+
+            title:
+                `Arrived at ${result.universe.name}`,
+
+            description:
+                result.universe.description,
+
+            hint:
+                result.universe.hints &&
+                result.universe.hints.length
+                    ? result.universe.hints[
+                        result.universe.hints.length - 1
+                    ]
+                    : "This dimension has secrets waiting to be discovered."
+        });
+
+    } catch (error) {
+
+        alert(
+            "Dimension travel failed."
+        );
+    }
 }
 
 
@@ -1488,7 +2212,9 @@ function openCreateCharacter() {
 
     document.getElementById(
         "characterModal"
-    ).classList.add("open");
+    ).classList.add(
+        "open"
+    );
 }
 
 
@@ -1496,7 +2222,9 @@ function closeCreateCharacter() {
 
     document.getElementById(
         "characterModal"
-    ).classList.remove("open");
+    ).classList.remove(
+        "open"
+    );
 }
 
 
@@ -1527,7 +2255,9 @@ async function createCharacter() {
             "newTraits"
         ).value
         .split(",")
-        .map(x => x.trim())
+        .map(
+            x => x.trim()
+        )
         .filter(Boolean);
 
     if (!name || !personality) {
@@ -1540,19 +2270,26 @@ async function createCharacter() {
     }
 
     const response =
-        await fetch("/characters/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                name,
-                role,
-                personality,
-                description,
-                traits
-            })
-        });
+        await fetch(
+            "/characters/create",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify({
+                        name,
+                        role,
+                        personality,
+                        description,
+                        traits
+                    })
+            }
+        );
 
     const result =
         await response.json();
@@ -1582,17 +2319,506 @@ async function createCharacter() {
 
 
 /* =========================================================
-HTML SAFETY
+STORY
 ========================================================= */
 
-function escapeHtml(text) {
+async function openStoryMode() {
 
-    return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    document.getElementById(
+        "storyOverlay"
+    ).classList.add(
+        "open"
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                "/story/tree"
+            );
+
+        const result =
+            await response.json();
+
+        if (
+            !result.tree ||
+            !result.tree.nodes ||
+            Object.keys(
+                result.tree.nodes
+            ).length === 0
+        ) {
+
+            await startNewStory();
+
+        } else {
+
+            story = {
+
+                active:
+                    result.active,
+
+                title:
+                    result.title,
+
+                theme:
+                    result.theme,
+
+                tree:
+                    result.tree,
+
+                seen_nodes:
+                    result.seen_nodes,
+
+                history:
+                    result.history,
+
+                ending:
+                    result.ending,
+
+                current_node:
+                    result.current_node ||
+                    result.tree.start
+            };
+
+            renderStory();
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        await startNewStory();
+    }
+}
+
+
+function closeStoryMode() {
+
+    document.getElementById(
+        "storyOverlay"
+    ).classList.remove(
+        "open"
+    );
+}
+
+
+async function startNewStory() {
+
+    const response =
+        await fetch(
+            "/story/start",
+            {
+                method: "POST"
+            }
+        );
+
+    const result =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(
+            result.error ||
+            "Could not create story."
+        );
+
+        return;
+    }
+
+    story =
+        result.story;
+
+    renderStory();
+}
+
+
+function renderStory() {
+
+    if (!story) return;
+
+    document.getElementById(
+        "storyTitle"
+    ).textContent =
+        story.title ||
+        "Story Mode";
+
+    document.getElementById(
+        "storyTheme"
+    ).textContent =
+        story.theme ||
+        "";
+
+    const nodes =
+        story.tree.nodes ||
+        {};
+
+    const current =
+        nodes[
+            story.current_node
+        ];
+
+    const endingBox =
+        document.getElementById(
+            "endingBox"
+        );
+
+    endingBox.classList.add(
+        "hidden"
+    );
+
+    const choices =
+        document.getElementById(
+            "choices"
+        );
+
+    choices.innerHTML = "";
+
+    if (!current) {
+
+        if (story.ending) {
+
+            document.getElementById(
+                "sceneTitle"
+            ).textContent =
+                story.ending.title;
+
+            document.getElementById(
+                "sceneText"
+            ).textContent =
+                story.ending.text;
+
+            endingBox.classList.remove(
+                "hidden"
+            );
+
+        }
+
+        renderStoryTree();
+
+        return;
+    }
+
+    document.getElementById(
+        "sceneTitle"
+    ).textContent =
+        current.title;
+
+    document.getElementById(
+        "sceneText"
+    ).textContent =
+        current.text;
+
+    if (
+        story.ending &&
+        !story.active
+    ) {
+
+        endingBox.classList.remove(
+            "hidden"
+        );
+
+        endingBox.innerHTML = `
+
+            <h2>
+                ${escapeHtml(
+                    story.ending.title
+                )}
+            </h2>
+
+            <p>
+                ${escapeHtml(
+                    story.ending.text
+                )}
+            </p>
+
+            <button
+                onclick="replayStory()">
+                🔁 Replay
+            </button>
+        `;
+
+        renderStoryTree();
+
+        return;
+    }
+
+    (current.choices || []).forEach(
+        choice => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.className =
+                "choice";
+
+            button.innerHTML = `
+
+                <span class="choice-letter">
+                    ${escapeHtml(
+                        choice.id
+                    )}.
+                </span>
+
+                ${escapeHtml(
+                    choice.text
+                )}
+            `;
+
+            button.onclick = () =>
+                chooseStory(
+                    choice.id
+                );
+
+            choices.appendChild(
+                button
+            );
+        }
+    );
+
+    renderStoryTree();
+}
+
+
+async function chooseStory(
+    choice
+) {
+
+    const response =
+        await fetch(
+            "/story/choose",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify({
+                        choice:
+                            choice
+                    })
+            }
+        );
+
+    const result =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(
+            result.error ||
+            "Choice failed."
+        );
+
+        return;
+    }
+
+    story =
+        result.story;
+
+    renderStory();
+}
+
+
+function renderStoryTree() {
+
+    const container =
+        document.getElementById(
+            "storyTree"
+        );
+
+    container.innerHTML = "";
+
+    if (!story ||
+        !story.tree)
+        return;
+
+    const nodes =
+        story.tree.nodes ||
+        {};
+
+    const seen =
+        story.seen_nodes ||
+        [];
+
+    Object.entries(nodes).forEach(
+        ([id, node]) => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            let classes =
+                "tree-node";
+
+            if (seen.includes(id)) {
+
+                classes +=
+                    " seen";
+
+            } else {
+
+                classes +=
+                    " hidden";
+            }
+
+            if (
+                id ===
+                story.current_node
+            ) {
+
+                classes +=
+                    " current";
+            }
+
+            div.className =
+                classes;
+
+            let label = "";
+
+            if (
+                id ===
+                story.current_node
+            ) {
+
+                label =
+                    "▶ ";
+            }
+
+            if (seen.includes(id)) {
+
+                label +=
+                    node.title;
+
+            } else {
+
+                label +=
+                    "???";
+            }
+
+            div.textContent =
+                label;
+
+            container.appendChild(
+                div
+            );
+        }
+    );
+}
+
+
+async function replayStory() {
+
+    const response =
+        await fetch(
+            "/story/replay",
+            {
+                method: "POST"
+            }
+        );
+
+    const result =
+        await response.json();
+
+    if (!response.ok) {
+
+        alert(
+            result.error ||
+            "Unable to replay story."
+        );
+
+        return;
+    }
+
+    story =
+        result.story;
+
+    renderStory();
+}
+
+
+/* =========================================================
+RESET WORLD
+========================================================= */
+
+async function resetWorld() {
+
+    if (!confirm(
+        "Create a completely new multiverse?\n\n" +
+        "This deletes the current dimensions, " +
+        "characters, memories, events, and stories."
+    )) {
+
+        return;
+    }
+
+    const response =
+        await fetch(
+            "/world/reset",
+            {
+                method:
+                    "POST"
+            }
+        );
+
+    const result =
+        await response.json();
+
+    if (result.success) {
+
+        selectedCharacter =
+            null;
+
+        story =
+            null;
+
+        await loadWorld();
+
+        addTemporaryMessage(
+            "New Multiverse",
+            `Multiverse #${result.world_number} created.`,
+            "system"
+        );
+    }
+}
+
+
+/* =========================================================
+ESCAPE HTML
+========================================================= */
+
+function escapeHtml(
+    text
+) {
+
+    return String(
+        text ?? ""
+    )
+    .replaceAll(
+        "&",
+        "&amp;"
+    )
+    .replaceAll(
+        "<",
+        "&lt;"
+    )
+    .replaceAll(
+        ">",
+        "&gt;"
+    )
+    .replaceAll(
+        '"',
+        "&quot;"
+    )
+    .replaceAll(
+        "'",
+        "&#039;"
+    );
 }
 
 
@@ -1605,4 +2831,6 @@ loadWorld();
 </script>
 
 </body>
+
 </html>
+```
