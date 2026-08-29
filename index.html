@@ -819,7 +819,7 @@ button{
 // GitHub Pages is the frontend; Render is the Python backend.
 // Replace this URL after you deploy the Render service.
 // ============================================================
-const API_BASE = "https://school-world.onrender.com";
+const API_BASE = window.SCHOOL_WORLD_API || "https://school-world.onrender.com";
 const CLIENT_ID_KEY = "schoolWorldClientId";
 let CLIENT_ID = localStorage.getItem(CLIENT_ID_KEY);
 if(!CLIENT_ID){
@@ -828,6 +828,18 @@ if(!CLIENT_ID){
 }
 function apiUrl(path){
     return API_BASE.replace(/\/$/, "") + path;
+}
+
+async function checkBackendConnection(){
+    try{
+        const r = await fetch(apiUrl("/health"), {cache:"no-store"});
+        const data = await r.json();
+        console.log("School World backend:", data);
+        return r.ok && data.ok;
+    }catch(error){
+        console.error("Backend connection failed:", error);
+        return false;
+    }
 }
 
 
@@ -3247,3 +3259,7 @@ loadCharacters();
 
 </body>
 </html>
+<script>
+// Final backend connection check for GitHub Pages + Render.
+window.addEventListener("load", () => { checkBackendConnection(); });
+</script>
