@@ -833,5 +833,5 @@ def safe_json_from_ai(text):
     if (
         start != -1
         and end != -1
-        and end > start
+        and end > start )
    
