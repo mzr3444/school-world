@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,1012 +8,1205 @@
 <title>School World</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #090d16;
-    color: #ffffff;
+    background: #080b12;
+    color: #e9eef7;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+    cursor: pointer;
+    border: 0;
 }
 
 header {
-    padding: 18px 25px;
-    background: #111827;
-    border-bottom: 1px solid #293548;
+    height: 64px;
+    background: #0d111b;
+    border-bottom: 1px solid #222a3a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.logo {
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.header-buttons button {
+    background: #182132;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+
+.header-buttons button:hover {
+    background: #243149;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 270px 1fr 360px;
+    min-height: calc(100vh - 64px);
+}
+
+/* LEFT */
+
+.sidebar {
+    background: #0b0f17;
+    border-right: 1px solid #222a3a;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    font-size: 17px;
+}
+
+.world-button {
+    width: 100%;
+    text-align: left;
+    background: #131a28;
+    color: white;
+    padding: 13px;
+    border-radius: 9px;
+    margin-bottom: 9px;
+    border: 1px solid #202b3e;
+}
+
+.world-button:hover {
+    background: #1b2536;
+}
+
+.world-button.active {
+    border-color: #718cff;
+}
+
+.world-small {
+    display: block;
+    color: #8d9ab1;
+    font-size: 11px;
+    margin-top: 5px;
+}
+
+/* CENTER */
+
+.story-area {
+    padding: 25px;
+    overflow-y: auto;
+}
+
+.world-title {
+    font-size: 27px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.theme {
+    color: #8896ad;
+    margin-bottom: 20px;
+}
+
+.scene-card {
+    background: #101621;
+    border: 1px solid #222c3e;
+    border-radius: 14px;
+    padding: 25px;
+    max-width: 950px;
+    margin: auto;
+}
+
+.scene-title {
+    font-size: 25px;
+    margin-bottom: 5px;
+}
+
+.scene-location {
+    color: #8290aa;
+    margin-bottom: 22px;
+}
+
+.scene-text {
+    white-space: pre-wrap;
+    line-height: 1.75;
+    font-size: 16px;
+}
+
+.choices {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.choice {
+    background: #182237;
+    color: white;
+    padding: 15px 18px;
+    border-radius: 9px;
+    text-align: left;
+    border: 1px solid #273550;
+    font-size: 15px;
+}
+
+.choice:hover {
+    background: #243352;
+    border-color: #718cff;
+}
+
+.ending {
+    margin-top: 25px;
+    padding: 20px;
+    border: 1px solid #5d78d8;
+    border-radius: 12px;
+    background: #141c31;
+}
+
+.loading {
+    text-align: center;
+    color: #8896ad;
+    padding: 50px;
+}
+
+/* RIGHT TREE */
+
+.tree-panel {
+    background: #0b0f17;
+    border-left: 1px solid #222a3a;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.tree-panel h2 {
+    margin-top: 0;
+}
+
+.tree-description {
+    color: #8491a7;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.tree {
+    margin-top: 20px;
+}
+
+.chapter {
+    color: #7584a0;
+    font-size: 11px;
+    font-weight: bold;
+    margin: 18px 0 7px;
+    text-transform: uppercase;
+}
+
+.node {
+    position: relative;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 9px;
+    border: 1px solid #202a3c;
+    background: #111722;
+}
+
+.node.seen {
+    border-color: #38506e;
+    background: #131d2b;
+}
+
+.node.current {
+    border-color: #728dff;
+    box-shadow: 0 0 0 1px #728dff;
+}
+
+.node.unseen {
+    opacity: 0.62;
+}
+
+.node.ending {
+    background: #171727;
+}
+
+.node-title {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.node-location {
+    font-size: 10px;
+    color: #78869e;
+    margin-top: 4px;
+}
+
+.node-status {
+    font-size: 10px;
+    margin-top: 8px;
+}
+
+.seen-status {
+    color: #75d99a;
+}
+
+.unseen-status {
+    color: #77839a;
+}
+
+.current-status {
+    color: #8ca3ff;
+}
+
+.legend {
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 9px;
+    background: #101620;
+    font-size: 11px;
+    color: #8996aa;
+    line-height: 1.8;
+}
+
+/* MODALS */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal.open {
+    display: flex;
+}
+
+.modal-box {
+    width: min(850px, 92vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #101621;
+    border: 1px solid #29354b;
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 22px;
-}
-
-button {
-    border: 0;
-    border-radius: 8px;
-    padding: 10px 15px;
-    cursor: pointer;
-    background: #2563eb;
+.close {
+    background: #222c3d;
     color: white;
-    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 7px;
 }
 
-button:hover {
-    opacity: .85;
-}
-
-.danger {
-    background: #dc2626;
-}
-
-.secondary {
-    background: #374151;
-}
-
-.layout {
-    display: grid;
-    grid-template-columns: 230px 1fr 300px;
-    height: calc(100vh - 65px);
-}
-
-.sidebar,
-.rightbar {
-    background: #0f1522;
-    padding: 18px;
-    overflow-y: auto;
-}
-
-.sidebar {
-    border-right: 1px solid #293548;
-}
-
-.rightbar {
-    border-left: 1px solid #293548;
-}
-
-.main {
+.world-row {
     display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.world-title {
-    padding: 15px 20px;
-    background: #111827;
-    border-bottom: 1px solid #293548;
-}
-
-.world-title h2 {
-    margin: 0 0 5px;
-}
-
-.location {
-    color: #9ca3af;
-}
-
-.story {
-    flex: 1;
-    overflow-y: auto;
-    padding: 25px;
-}
-
-.message {
-    margin-bottom: 22px;
-    max-width: 850px;
-}
-
-.story-text {
-    white-space: pre-wrap;
-    line-height: 1.7;
-    font-size: 16px;
-}
-
-.user-action {
-    background: #172033;
-    border-left: 4px solid #2563eb;
-    padding: 14px;
-    border-radius: 7px;
-    margin-bottom: 20px;
-}
-
-.ai-story {
-    background: #101827;
-    border-left: 4px solid #8b5cf6;
-    padding: 18px;
-    border-radius: 7px;
-}
-
-.composer {
-    border-top: 1px solid #293548;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    background: #151d2b;
+    border: 1px solid #253149;
     padding: 15px;
-    background: #0f1522;
+    margin-top: 10px;
+    border-radius: 10px;
 }
 
-textarea {
-    width: 100%;
-    min-height: 75px;
-    resize: vertical;
-    background: #080c14;
-    color: white;
-    border: 1px solid #344158;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 15px;
-}
-
-.controls {
+.world-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 7px;
+    flex-wrap: wrap;
 }
 
-.choice {
-    width: 100%;
-    text-align: left;
-    margin-bottom: 8px;
-    background: #1e293b;
+.world-actions button {
+    padding: 8px 11px;
+    border-radius: 7px;
+    background: #253149;
+    color: white;
 }
 
-.choice:hover {
-    background: #334155;
+.world-actions button:hover {
+    background: #344463;
 }
 
-.panel-title {
-    margin-top: 0;
-    font-size: 16px;
+.delete-button {
+    background: #5c252d !important;
 }
 
-.node {
-    padding: 9px;
-    margin-bottom: 7px;
-    border-radius: 6px;
-    background: #182235;
-    font-size: 13px;
-}
-
-.node.visited {
-    border-left: 3px solid #22c55e;
-}
-
-.node.current {
-    border-left: 3px solid #3b82f6;
-}
-
-.node.unseen {
-    opacity: .45;
-}
-
-.small {
-    color: #9ca3af;
-    font-size: 12px;
-}
-
-.ending {
-    padding: 14px;
-    border-radius: 8px;
-    background: #312e81;
-    margin-bottom: 15px;
-}
-
-.status {
-    margin-top: 10px;
-    color: #fbbf24;
-}
-
-@media(max-width: 1000px) {
+@media (max-width: 1100px) {
     .layout {
-        grid-template-columns: 180px 1fr;
+        grid-template-columns: 220px 1fr;
     }
 
-    .rightbar {
+    .tree-panel {
         display: none;
     }
 }
 
-@media(max-width: 700px) {
+@media (max-width: 700px) {
     .layout {
         display: block;
-        height: auto;
     }
 
     .sidebar {
         display: none;
     }
 
-    .main {
-        min-height: calc(100vh - 65px);
+    .story-area {
+        padding: 12px;
+    }
+
+    .scene-card {
+        padding: 17px;
     }
 }
+
 </style>
 </head>
 
 <body>
 
 <header>
-    <h1>🌎 School World</h1>
 
-    <div>
-        <button onclick="newWorld()">New World</button>
-        <button class="danger" onclick="resetWorld()">Reset World</button>
+    <div class="logo">
+        🌎 School World
     </div>
+
+    <div class="header-buttons">
+        <button onclick="newWorld()">🌎 New World</button>
+        <button onclick="openWorlds()">📚 Worlds</button>
+        <button onclick="restartWorld()">🔄 Restart</button>
+    </div>
+
 </header>
+
 
 <div class="layout">
 
     <aside class="sidebar">
 
-        <h3>World</h3>
+        <h2>Characters</h2>
 
-        <div class="small">World ID</div>
-        <div id="worldId">None</div>
-
-        <br>
-
-        <div class="small">Turn</div>
-        <div id="turn">0</div>
-
-        <br>
-
-        <div class="small">Location</div>
-        <div id="sideLocation">Classroom</div>
-
-        <br>
-
-        <button class="secondary" onclick="replayWorld()">
-            Replay World
-        </button>
-
-        <br><br>
-
-        <button class="secondary" onclick="showTree()">
-            Refresh Story Tree
-        </button>
+        <div id="characters">
+            No world loaded.
+        </div>
 
     </aside>
 
 
-    <main class="main">
+    <main class="story-area">
 
-        <div class="world-title">
-
-            <h2 id="worldName">
-                No world loaded
-            </h2>
-
-            <div class="location">
-                📍 <span id="location">Classroom</span>
+        <div id="story">
+            <div class="loading">
+                Create a new world to begin.
             </div>
-
         </div>
-
-
-        <section class="story" id="story">
-
-            <div class="message">
-
-                <div class="ai-story">
-
-                    <div class="story-text">
-                        Create a new world to begin your story.
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <section class="composer">
-
-            <textarea
-                id="input"
-                placeholder="What do you do?"
-                onkeydown="handleKey(event)"
-            ></textarea>
-
-            <div class="controls">
-
-                <button onclick="sendMessage()">
-                    Send
-                </button>
-
-                <button
-                    class="secondary"
-                    onclick="clearInput()"
-                >
-                    Clear
-                </button>
-
-            </div>
-
-            <div
-                class="status"
-                id="status"
-            ></div>
-
-        </section>
 
     </main>
 
 
-    <aside class="rightbar">
+    <aside class="tree-panel">
 
-        <h3 class="panel-title">
-            🌳 Story Tree
-        </h3>
+        <h2>🌳 Story Tree</h2>
 
-        <div class="small">
-            Green = visited
+        <div class="tree-description">
+            The complete structure of this world is shown here.
+            Green nodes have been seen. Dim nodes have not been
+            reached yet.
         </div>
 
-        <div class="small">
-            Blue = current
+        <div id="tree" class="tree">
+            No world loaded.
         </div>
 
-        <div class="small">
-            Faded = unseen
+        <div class="legend">
+            🟢 Seen<br>
+            🔵 Current scene<br>
+            ⚪ Not seen yet<br>
+            🏁 Ending
         </div>
-
-        <br>
-
-        <div id="tree">
-            No story yet.
-        </div>
-
-        <hr>
-
-        <h3 class="panel-title">
-            🎭 Characters
-        </h3>
-
-        <div id="characters">
-            No characters yet.
-        </div>
-
-        <hr>
-
-        <h3 class="panel-title">
-            🧠 Memories
-        </h3>
-
-        <div id="memories">
-            No memories yet.
-        </div>
-
-        <hr>
-
-        <div id="ending"></div>
 
     </aside>
 
 </div>
 
 
+<!-- WORLDS MODAL -->
+
+<div id="worldModal" class="modal">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2>📚 Your Worlds</h2>
+
+            <button
+                class="close"
+                onclick="closeWorlds()">
+                Close
+            </button>
+
+        </div>
+
+        <div id="worldList">
+            Loading...
+        </div>
+
+    </div>
+
+</div>
+
+
 <script>
 
-let world = null;
+let currentWorld = null;
 
 
-// ============================================================
-// NEW WORLD
-// ============================================================
+/* ============================================================
+   API
+   ============================================================ */
+
+async function api(url, options = {}) {
+
+    const response = await fetch(url, {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        ...options
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Server error");
+    }
+
+    return data;
+}
+
+
+/* ============================================================
+   NEW WORLD
+   ============================================================ */
 
 async function newWorld() {
 
-    setStatus("Creating a new world...");
+    if (currentWorld) {
+
+        const okay = confirm(
+            "Create a completely new world?\n\n" +
+            "Your current world will remain saved in Replay Worlds."
+        );
+
+        if (!okay) return;
+    }
+
+    showLoading("Creating a completely new world...");
 
     try {
 
-        const response = await fetch("/world/new", {
+        const world = await api("/world/new", {
             method: "POST"
         });
 
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.error || "Could not create world.");
-        }
-
-        world = data.world;
+        currentWorld = world;
 
         renderWorld();
 
-        document.getElementById("story").innerHTML = `
-            <div class="message">
-                <div class="ai-story">
-                    <div class="story-text">
-                        A new world has been created.<br><br>
-                        The choices you make here will shape what happens next.
-                        Your story has begun...
-                    </div>
-                </div>
-            </div>
-        `;
+    } catch (error) {
 
-        setStatus("World created.");
-
-    } catch(error) {
-
-        setStatus(error.message);
+        showError(error);
 
     }
-
 }
 
 
-// ============================================================
-// RESET
-// ============================================================
+/* ============================================================
+   LOAD WORLD
+   ============================================================ */
 
-async function resetWorld() {
+async function loadWorld(id) {
 
-    if (!world) {
+    closeWorlds();
 
-        await newWorld();
-        return;
-
-    }
-
-    const confirmed = confirm(
-        "Reset this world? All memories and story progress will be erased."
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    setStatus("Resetting world...");
+    showLoading("Loading world...");
 
     try {
 
-        const response = await fetch(
-            `/world/${world.id}/reset`,
-            {
-                method: "POST"
-            }
+        const world = await api(
+            "/world/" + encodeURIComponent(id)
         );
 
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.error || "Reset failed.");
-        }
-
-        world = data.world;
-
-        document.getElementById("story").innerHTML = "";
+        currentWorld = world;
 
         renderWorld();
 
-        setStatus("World reset. A completely new story can begin.");
+    } catch (error) {
 
-    } catch(error) {
-
-        setStatus(error.message);
+        showError(error);
 
     }
-
 }
 
 
-// ============================================================
-// REPLAY
-// ============================================================
+/* ============================================================
+   CHOOSE
+   ============================================================ */
 
-async function replayWorld() {
+async function choose(index) {
 
-    if (!world) {
-        setStatus("Create a world first.");
-        return;
-    }
+    if (!currentWorld) return;
 
-    setStatus("Creating replay...");
+    const scene = currentWorld.current_scene;
 
-    try {
+    if (!scene.choices[index]) return;
 
-        const response = await fetch(
-            `/world/${world.id}/replay`,
-            {
-                method: "POST"
-            }
-        );
+    disableChoices();
 
-        const data = await response.json();
-
-        if (!data.success) {
-            throw new Error(data.error || "Replay failed.");
-        }
-
-        world = data.world;
-
-        document.getElementById("story").innerHTML = `
-            <div class="message">
-                <div class="ai-story">
-                    <div class="story-text">
-                        Replay started.<br><br>
-                        This is a fresh run. Your previous choices do not
-                        control this version of the world.
-                    </div>
-                </div>
-            </div>
-        `;
-
-        renderWorld();
-
-        setStatus("Replay started.");
-
-    } catch(error) {
-
-        setStatus(error.message);
-
-    }
-
-}
-
-
-// ============================================================
-// SEND MESSAGE
-// ============================================================
-
-async function sendMessage() {
-
-    if (!world) {
-
-        setStatus("Create a world first.");
-
-        return;
-
-    }
-
-    if (world.finished) {
-
-        setStatus("This story has already ended. Replay or create a new world.");
-
-        return;
-
-    }
-
-    const input = document.getElementById("input");
-
-    const message = input.value.trim();
-
-    if (!message) {
-        return;
-    }
-
-    addUserMessage(message);
-
-    input.value = "";
-
-    setStatus("The world is reacting...");
+    showLoading("The world is reacting to your decision...");
 
     try {
 
-        const response = await fetch(
-            "/chat",
+        const world = await api(
+            "/world/" +
+            encodeURIComponent(currentWorld.id) +
+            "/choose",
             {
                 method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
                 body: JSON.stringify({
-                    world_id: world.id,
-                    message: message
+                    choice_index: index
                 })
             }
         );
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "AI request failed.");
-        }
-
-        world = data.world;
-
-        addAIStory(
-            data.story,
-            data.choices
-        );
+        currentWorld = world;
 
         renderWorld();
 
-        if (data.ending) {
+    } catch (error) {
 
-            showEnding(data.ending);
-
-        }
-
-        setStatus("");
-
-    } catch(error) {
-
-        setStatus("AI Error: " + error.message);
+        showError(error);
 
     }
-
 }
 
 
-// ============================================================
-// USER MESSAGE
-// ============================================================
+/* ============================================================
+   RESTART
+   ============================================================ */
 
-function addUserMessage(text) {
+async function restartWorld() {
 
-    const story = document.getElementById("story");
+    if (!currentWorld) {
 
-    const element = document.createElement("div");
+        alert("No world is currently loaded.");
 
-    element.className = "message";
-
-    element.innerHTML = `
-        <div class="user-action">
-            <strong>You</strong>
-            <div class="story-text">
-                ${escapeHTML(text)}
-            </div>
-        </div>
-    `;
-
-    story.appendChild(element);
-
-    story.scrollTop = story.scrollHeight;
-
-}
-
-
-// ============================================================
-// AI STORY
-// ============================================================
-
-function addAIStory(text, choices) {
-
-    const story = document.getElementById("story");
-
-    const element = document.createElement("div");
-
-    element.className = "message";
-
-    let choicesHTML = "";
-
-    if (choices && choices.length) {
-
-        choicesHTML = `
-            <div style="margin-top:20px;">
-                <strong>What will you do?</strong>
-                <br><br>
-
-                ${choices.map(choice => `
-                    <button
-                        class="choice"
-                        onclick="choose(${JSON.stringify(choice)})"
-                    >
-                        ${escapeHTML(choice)}
-                    </button>
-                `).join("")}
-
-            </div>
-        `;
-
-    }
-
-    element.innerHTML = `
-        <div class="ai-story">
-
-            <div class="story-text">
-                ${escapeHTML(text)}
-            </div>
-
-            ${choicesHTML}
-
-        </div>
-    `;
-
-    story.appendChild(element);
-
-    story.scrollTop = story.scrollHeight;
-
-}
-
-
-// ============================================================
-// CHOICE
-// ============================================================
-
-function choose(choice) {
-
-    document.getElementById("input").value = choice;
-
-    sendMessage();
-
-}
-
-
-// ============================================================
-// STORY TREE
-// ============================================================
-
-async function showTree() {
-
-    if (!world) {
         return;
     }
+
+    const okay = confirm(
+        "Restart this exact world?\n\n" +
+        "The story tree, characters and seed will stay the same, " +
+        "but your progress will be reset."
+    );
+
+    if (!okay) return;
+
+    showLoading("Restarting world...");
 
     try {
 
-        const response = await fetch(
-            `/world/${world.id}/tree`
+        const world = await api(
+            "/world/" +
+            encodeURIComponent(currentWorld.id) +
+            "/restart",
+            {
+                method: "POST"
+            }
         );
 
-        const data = await response.json();
+        currentWorld = world;
 
-        if (!data.success) {
-            throw new Error(data.error || "Tree unavailable.");
-        }
+        renderWorld();
 
-        renderTree(
-            data.tree,
-            data.current_node
-        );
+    } catch (error) {
 
-    } catch(error) {
-
-        setStatus(error.message);
+        showError(error);
 
     }
-
 }
 
 
-function renderTree(tree, currentNode) {
+/* ============================================================
+   WORLDS
+   ============================================================ */
 
-    const container = document.getElementById("tree");
+async function openWorlds() {
 
-    container.innerHTML = "";
+    document
+        .getElementById("worldModal")
+        .classList
+        .add("open");
 
-    const nodes = Object.entries(tree);
+    const container =
+        document.getElementById("worldList");
 
-    if (!nodes.length) {
+    container.innerHTML = "Loading worlds...";
+
+    try {
+
+        const data = await api("/worlds");
+
+        if (!data.worlds.length) {
+
+            container.innerHTML =
+                "<p>No saved worlds yet.</p>";
+
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const world of data.worlds) {
+
+            const row =
+                document.createElement("div");
+
+            row.className = "world-row";
+
+            const ending =
+                world.completed
+                ? "Ending: " + world.ending
+                : "In progress";
+
+            row.innerHTML = `
+                <div>
+                    <strong>${escapeHtml(world.title)}</strong>
+                    <div class="world-small">
+                        Chapter ${world.chapter}
+                        • ${escapeHtml(ending)}
+                    </div>
+                    <div class="world-small">
+                        Seed: ${world.seed}
+                    </div>
+                </div>
+
+                <div class="world-actions">
+
+                    <button
+                        onclick="loadWorld('${world.id}')">
+                        ▶ Continue
+                    </button>
+
+                    <button
+                        onclick="restartSpecific('${world.id}')">
+                        🔄 Restart
+                    </button>
+
+                    <button
+                        class="delete-button"
+                        onclick="deleteWorld('${world.id}')">
+                        🗑 Delete
+                    </button>
+
+                </div>
+            `;
+
+            container.appendChild(row);
+        }
+
+    } catch (error) {
 
         container.innerHTML =
-            `<div class="small">No story nodes yet.</div>`;
-
-        return;
+            "<p>" +
+            escapeHtml(error.message) +
+            "</p>";
 
     }
-
-    nodes.forEach(([id, node]) => {
-
-        const element = document.createElement("div");
-
-        let className = "node";
-
-        if (node.status === "visited") {
-            className += " visited";
-        }
-
-        if (id === currentNode) {
-            className += " current";
-        }
-
-        element.className = className;
-
-        element.innerHTML = `
-            <strong>${escapeHTML(node.title)}</strong>
-
-            <div class="small">
-                Turn ${node.turn || 0}
-            </div>
-
-            <div class="small">
-                ${escapeHTML(node.location || "")}
-            </div>
-        `;
-
-        container.appendChild(element);
-
-    });
-
 }
 
 
-// ============================================================
-// RENDER WORLD
-// ============================================================
+function closeWorlds() {
+
+    document
+        .getElementById("worldModal")
+        .classList
+        .remove("open");
+}
+
+
+async function restartSpecific(id) {
+
+    const okay = confirm(
+        "Restart this world from the beginning?"
+    );
+
+    if (!okay) return;
+
+    try {
+
+        const world = await api(
+            "/world/" +
+            encodeURIComponent(id) +
+            "/restart",
+            {
+                method: "POST"
+            }
+        );
+
+        currentWorld = world;
+
+        closeWorlds();
+
+        renderWorld();
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+}
+
+
+async function deleteWorld(id) {
+
+    const okay = confirm(
+        "Permanently delete this world?"
+    );
+
+    if (!okay) return;
+
+    try {
+
+        await api(
+            "/world/" +
+            encodeURIComponent(id),
+            {
+                method: "DELETE"
+            }
+        );
+
+        if (
+            currentWorld &&
+            currentWorld.id === id
+        ) {
+            currentWorld = null;
+
+            document.getElementById("story").innerHTML =
+                `<div class="loading">
+                    World deleted.
+                </div>`;
+
+            document.getElementById("tree").innerHTML =
+                "No world loaded.";
+
+            document.getElementById("characters").innerHTML =
+                "No world loaded.";
+        }
+
+        openWorlds();
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+}
+
+
+/* ============================================================
+   RENDER WORLD
+   ============================================================ */
 
 function renderWorld() {
 
-    if (!world) {
-        return;
-    }
+    renderStory();
 
-    document.getElementById("worldId").textContent =
-        world.id;
+    renderCharacters();
 
-    document.getElementById("worldName").textContent =
-        world.name;
+    renderTree();
 
-    document.getElementById("turn").textContent =
-        world.turn;
-
-    document.getElementById("location").textContent =
-        world.location;
-
-    document.getElementById("sideLocation").textContent =
-        world.location;
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
 
 
-    // Characters
+/* ============================================================
+   STORY
+   ============================================================ */
 
-    const characters =
-        document.getElementById("characters");
+function renderStory() {
 
-    characters.innerHTML = "";
+    const story =
+        document.getElementById("story");
 
-    Object.entries(world.characters || {})
-        .forEach(([key, value]) => {
+    const scene =
+        currentWorld.current_scene;
 
-            const div =
-                document.createElement("div");
+    let html = `
 
-            div.className = "node";
+        <div class="world-title">
+            ${escapeHtml(currentWorld.title)}
+        </div>
 
-            div.innerHTML =
-                `<strong>${escapeHTML(key)}</strong>
-                 <br>${escapeHTML(value)}`;
+        <div class="theme">
+            Theme: ${escapeHtml(currentWorld.theme)}
+            • Seed: ${currentWorld.seed}
+        </div>
 
-            characters.appendChild(div);
+        <div class="scene-card">
 
-        });
+            <div class="scene-title">
+                ${escapeHtml(scene.title)}
+            </div>
 
+            <div class="scene-location">
+                Chapter ${scene.chapter}
+                • 📍 ${escapeHtml(scene.location)}
+            </div>
 
-    // Memories
+            <div class="scene-text">
+                ${escapeHtml(scene.description)}
+            </div>
+    `;
 
-    const memories =
-        document.getElementById("memories");
+    if (currentWorld.completed) {
 
-    memories.innerHTML = "";
+        html += `
 
-    const recentMemories =
-        (world.memories || []).slice(-10);
+            <div class="ending">
 
-    if (!recentMemories.length) {
+                <strong>
+                    🏁 ${escapeHtml(currentWorld.ending)}
+                </strong>
 
-        memories.innerHTML =
-            `<div class="small">No memories yet.</div>`;
+                <p>
+                    This world has reached one of its
+                    possible major endings.
+                </p>
+
+                <button
+                    class="choice"
+                    onclick="restartWorld()">
+                    🔄 Restart This World
+                </button>
+
+                <button
+                    class="choice"
+                    onclick="newWorld()">
+                    🌎 Create A Completely New World
+                </button>
+
+            </div>
+        `;
 
     } else {
 
-        recentMemories.forEach(memory => {
+        html += `
+            <div class="choices">
+        `;
 
-            const div =
-                document.createElement("div");
+        scene.choices.forEach((choice, index) => {
 
-            div.className = "node";
+            html += `
+                <button
+                    class="choice"
+                    onclick="choose(${index})">
 
-            div.textContent = memory;
+                    ${index + 1}. 
+                    ${escapeHtml(choice.text)}
 
-            memories.appendChild(div);
+                </button>
+            `;
 
         });
 
+        html += `
+            </div>
+        `;
     }
 
-
-    renderTree(
-        world.story_nodes || {},
-        world.current_node
-    );
-
-
-    if (world.ending) {
-        showEnding(world.ending);
-    }
-
-}
-
-
-// ============================================================
-// ENDING
-// ============================================================
-
-function showEnding(ending) {
-
-    const container =
-        document.getElementById("ending");
-
-    container.innerHTML = `
-        <div class="ending">
-
-            <strong>🏁 Story Ending</strong>
-
-            <br><br>
-
-            ${escapeHTML(ending)}
-
-            <br><br>
-
-            <button
-                onclick="replayWorld()"
-                class="secondary"
-            >
-                Replay
-            </button>
-
+    html += `
         </div>
     `;
 
+    story.innerHTML = html;
 }
 
 
-// ============================================================
-// UTILITIES
-// ============================================================
+/* ============================================================
+   CHARACTERS
+   ============================================================ */
 
-function clearInput() {
+function renderCharacters() {
 
-    document.getElementById("input").value = "";
+    const container =
+        document.getElementById("characters");
 
-}
+    if (!currentWorld) {
 
+        container.innerHTML =
+            "No world loaded.";
 
-function setStatus(text) {
-
-    document.getElementById("status").textContent =
-        text;
-
-}
-
-
-function handleKey(event) {
-
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey
-    ) {
-
-        event.preventDefault();
-
-        sendMessage();
-
+        return;
     }
 
+    container.innerHTML = "";
+
+    Object.values(
+        currentWorld.characters
+    ).forEach(character => {
+
+        const div =
+            document.createElement("div");
+
+        div.style.background = "#131a28";
+        div.style.padding = "11px";
+        div.style.borderRadius = "8px";
+        div.style.marginBottom = "8px";
+
+        const relationship =
+            character.relationship >= 3
+            ? "Close"
+            : character.relationship > 0
+            ? "Friendly"
+            : character.relationship < 0
+            ? "Distrustful"
+            : "Neutral";
+
+        div.innerHTML = `
+            <strong>
+                ${escapeHtml(character.name)}
+            </strong>
+
+            <div class="world-small">
+                ${escapeHtml(character.trait)}
+            </div>
+
+            <div class="world-small">
+                Relationship: ${relationship}
+            </div>
+
+            <div class="world-small">
+                Trust: ${character.trust}
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
 }
 
 
-function escapeHTML(text) {
+/* ============================================================
+   STORY TREE
+   ============================================================ */
 
-    const div =
-        document.createElement("div");
+function renderTree() {
 
-    div.textContent =
-        String(text ?? "");
+    const treeContainer =
+        document.getElementById("tree");
 
-    return div.innerHTML;
+    if (!currentWorld) {
 
+        treeContainer.innerHTML =
+            "No world loaded.";
+
+        return;
+    }
+
+    treeContainer.innerHTML = "";
+
+    let currentChapter = null;
+
+    currentWorld.tree.forEach(node => {
+
+        if (node.chapter !== currentChapter) {
+
+            currentChapter = node.chapter;
+
+            const chapter =
+                document.createElement("div");
+
+            chapter.className = "chapter";
+
+            chapter.textContent =
+                "Chapter " + currentChapter;
+
+            treeContainer.appendChild(chapter);
+        }
+
+        const div =
+            document.createElement("div");
+
+        div.className = "node";
+
+        if (node.seen) {
+            div.classList.add("seen");
+        } else {
+            div.classList.add("unseen");
+        }
+
+        if (
+            node.id ===
+            currentWorld.current_node
+        ) {
+            div.classList.add("current");
+        }
+
+        if (node.type === "ending") {
+            div.classList.add("ending");
+        }
+
+        let status;
+
+        if (
+            node.id ===
+            currentWorld.current_node
+        ) {
+
+            status =
+                `<div class="node-status current-status">
+                    🔵 CURRENT
+                </div>`;
+
+        } else if (node.seen) {
+
+            status =
+                `<div class="node-status seen-status">
+                    🟢 SEEN
+                </div>`;
+
+        } else {
+
+            status =
+                `<div class="node-status unseen-status">
+                    ⚪ NOT SEEN YET
+                </div>`;
+        }
+
+        const ending =
+            node.type === "ending"
+            ? " 🏁"
+            : "";
+
+        div.innerHTML = `
+
+            <div class="node-title">
+                ${ending}
+                ${escapeHtml(node.title)}
+            </div>
+
+            <div class="node-location">
+                📍 ${escapeHtml(node.location)}
+            </div>
+
+            ${status}
+
+        `;
+
+        treeContainer.appendChild(div);
+    });
 }
 
 
-// ============================================================
-// START
-// ============================================================
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
 
-window.addEventListener("load", () => {
+function showLoading(text) {
 
-    newWorld();
+    document.getElementById("story").innerHTML =
+        `<div class="loading">
+            ${escapeHtml(text)}
+        </div>`;
+}
 
-});
+
+function showError(error) {
+
+    document.getElementById("story").innerHTML =
+        `<div class="scene-card">
+            <h2>Something went wrong</h2>
+
+            <div class="scene-text">
+                ${escapeHtml(error.message)}
+            </div>
+
+            <br>
+
+            <button
+                class="choice"
+                onclick="location.reload()">
+                Reload
+            </button>
+        </div>`;
+}
+
+
+function disableChoices() {
+
+    document
+        .querySelectorAll(".choice")
+        .forEach(button => {
+            button.disabled = true;
+            button.style.opacity = "0.5";
+        });
+}
+
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+/* ============================================================
+   STARTUP
+   ============================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        // The app starts with no selected world.
+        // User can choose New World or Replay Worlds.
+
+    }
+);
 
 </script>
 
 </body>
 </html>
+```
