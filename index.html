@@ -263,27 +263,6 @@ button{
     color:#999;
     font-size:12px;
     margin-top:4px;
-    padding-right:28px;
-}
-
-.eventClose{
-    position:absolute;
-    top:7px;
-    right:9px;
-    width:25px;
-    height:25px;
-    border:0;
-    border-radius:50%;
-    background:transparent;
-    color:#777;
-    font-size:15px;
-    line-height:25px;
-    padding:0;
-}
-
-.eventClose:hover{
-    background:#29292e;
-    color:white;
 }
 
 /* GROUP */
@@ -487,11 +466,161 @@ button{
         display:none;
     }
 }
-    /* Long-form character messages */
-    .message {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
+
+/* ============================================================
+   CINEMATIC STORY MODE
+============================================================ */
+
+.storyHomeButton{
+    border-color:#4b4b55;
+}
+
+#storyMode{
+    display:none;
+    width:100%;
+    height:100%;
+    position:relative;
+    background:
+        radial-gradient(circle at 50% 15%, #1b1b22 0%, #0d0d0f 55%);
+}
+
+#storyHeader{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:70px;
+    padding:15px 22px;
+    border-bottom:1px solid #25252a;
+    background:rgba(13,13,15,.94);
+    z-index:20;
+}
+
+#storyTitle{
+    font-size:17px;
+    font-weight:bold;
+}
+
+#storyChapter{
+    color:#666;
+    font-size:11px;
+    margin-top:4px;
+}
+
+#storyExit{
+    position:absolute;
+    right:20px;
+    top:20px;
+}
+
+#storyContent{
+    position:absolute;
+    top:70px;
+    bottom:0;
+    left:0;
+    right:0;
+    overflow-y:auto;
+    padding:45px 20px 100px;
+}
+
+#storyScene{
+    width:min(900px,100%);
+    margin:0 auto;
+    color:#e8e8ea;
+    font-size:17px;
+    line-height:1.8;
+    white-space:pre-wrap;
+}
+
+.storyParagraph{
+    margin-bottom:24px;
+}
+
+#storyConsequences{
+    width:min(900px,100%);
+    margin:30px auto;
+    padding:15px 18px;
+    border:1px solid #303035;
+    border-radius:12px;
+    background:#151519;
+    color:#aaa;
+    font-size:13px;
+    line-height:1.6;
+}
+
+#storyChoices{
+    width:min(900px,100%);
+    margin:35px auto 0;
+    display:grid;
+    gap:12px;
+}
+
+.storyChoice{
+    width:100%;
+    text-align:left;
+    padding:18px;
+    background:#161619;
+    border:1px solid #303035;
+    border-radius:12px;
+    color:#eee;
+    transition:.15s;
+}
+
+.storyChoice:hover{
+    background:#222227;
+    border-color:#55555d;
+    transform:translateY(-1px);
+}
+
+.storyChoiceId{
+    color:#666;
+    font-size:11px;
+    margin-bottom:6px;
+}
+
+.storyChoiceText{
+    font-size:15px;
+    line-height:1.5;
+}
+
+.storyChoicePreview{
+    color:#777;
+    font-size:12px;
+    margin-top:7px;
+}
+
+#storyLoading{
+    width:min(900px,100%);
+    margin:35px auto;
+    color:#555;
+    font-style:italic;
+    text-align:center;
+}
+
+#storyEnding{
+    width:min(900px,100%);
+    margin:35px auto;
+    padding:22px;
+    border:1px solid #3a3a43;
+    border-radius:12px;
+    text-align:center;
+    color:#ddd;
+}
+
+.storyResetButton{
+    margin-top:14px;
+}
+
+@media(max-width:650px){
+    #storyContent{
+        padding:35px 15px 80px;
     }
+
+    #storyScene{
+        font-size:16px;
+    }
+}
+
 </style>
 </head>
 
@@ -523,6 +652,12 @@ button{
             class="homeButton"
             onclick="openCreator()">
             + CREATE CHARACTER
+        </button>
+
+        <button
+            class="homeButton storyHomeButton"
+            onclick="openStoryMode()">
+            🎬 STORY MODE
         </button>
 
         <button
@@ -611,8 +746,6 @@ button{
 
     <div id="eventBar">
 
-        <button id="eventClose" class="eventClose" onclick="dismissEvent()" aria-label="Close event">✕</button>
-
         <div id="eventTitle"></div>
 
         <div id="eventDescription"></div>
@@ -640,6 +773,56 @@ button{
 
 </div>
 
+
+
+<!-- ============================================================
+     CINEMATIC STORY MODE
+============================================================ -->
+<div id="storyMode">
+
+    <div id="storyHeader">
+        <div id="storyTitle">Story Mode</div>
+        <div id="storyChapter">Chapter 1</div>
+
+        <button
+            class="control"
+            id="storyExit"
+            onclick="exitStoryMode()">
+            EXIT STORY
+        </button>
+    </div>
+
+    <div id="storyContent">
+
+        <div id="storyScene"></div>
+
+        <div id="storyConsequences" style="display:none;"></div>
+
+        <div id="storyLoading">
+            Building your story...
+        </div>
+
+        <div id="storyChoices"></div>
+
+        <div id="storyEnding" style="display:none;">
+            <div style="font-size:18px;font-weight:bold;">
+                Story Complete
+            </div>
+
+            <div
+                id="storyEndingText"
+                style="margin-top:10px;color:#999;">
+            </div>
+
+            <button
+                class="primary storyResetButton"
+                onclick="startNewStory()">
+                START A NEW STORY
+            </button>
+        </div>
+
+    </div>
+</div>
 
 <!-- ============================================================
      CHARACTER CREATOR
@@ -819,34 +1002,6 @@ button{
 
 
 <script>
-// ============================================================
-// DEPLOYMENT CONFIGURATION
-// GitHub Pages is the frontend; Render is the Python backend.
-// Replace this URL after you deploy the Render service.
-// ============================================================
-const API_BASE = window.SCHOOL_WORLD_API || "https://school-world.onrender.com";
-const CLIENT_ID_KEY = "schoolWorldClientId";
-let CLIENT_ID = localStorage.getItem(CLIENT_ID_KEY);
-if(!CLIENT_ID){
-    CLIENT_ID = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36));
-    localStorage.setItem(CLIENT_ID_KEY, CLIENT_ID);
-}
-function apiUrl(path){
-    return API_BASE.replace(/\/$/, "") + path;
-}
-
-async function checkBackendConnection(){
-    try{
-        const r = await fetch(apiUrl("/health"), {cache:"no-store"});
-        const data = await r.json();
-        console.log("School World backend:", data);
-        return r.ok && data.ok;
-    }catch(error){
-        console.error("Backend connection failed:", error);
-        return false;
-    }
-}
-
 
 /* ============================================================
    CHARACTERS
@@ -1125,6 +1280,128 @@ function loadConversation(){
 
     }
 
+}
+
+
+/* ============================================================
+   SHARED CHARACTER MEMORY
+============================================================ */
+
+const SHARED_MEMORY_KEY =
+    "schoolSharedCharacterMemory";
+
+function loadSharedMemory(){
+
+    const saved =
+        localStorage.getItem(
+            SHARED_MEMORY_KEY
+        );
+
+    if(!saved)
+        return {};
+
+    try{
+        const data = JSON.parse(saved);
+        return data && typeof data === "object"
+            ? data
+            : {};
+    }catch{
+        return {};
+    }
+}
+
+function saveSharedMemory(memory){
+
+    localStorage.setItem(
+        SHARED_MEMORY_KEY,
+        JSON.stringify(memory)
+    );
+}
+
+function addSharedMemory(participants, text){
+
+    if(!Array.isArray(participants) || !text)
+        return;
+
+    const memory = loadSharedMemory();
+
+    participants.forEach(name => {
+
+        if(!name) return;
+
+        if(!Array.isArray(memory[name])){
+            memory[name] = [];
+        }
+
+        if(!memory[name].includes(text)){
+            memory[name].push(text);
+        }
+
+        // Keep browser storage from growing forever.
+        memory[name] = memory[name].slice(-30);
+    });
+
+    saveSharedMemory(memory);
+}
+
+function getSharedMemory(){
+    return loadSharedMemory();
+}
+
+function clearSharedMemory(){
+    localStorage.removeItem(
+        SHARED_MEMORY_KEY
+    );
+}
+
+function extractMemoryFromUserMessage(text){
+
+    if(!text) return null;
+
+    const patterns = [
+        /\b(?:my|i) favorite book is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favourite book is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite movie is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite game is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite song is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite food is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite color is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite (.+?) is (.+?)(?:[.!?]|$)/i
+    ];
+
+    for(const pattern of patterns){
+        const match = text.match(pattern);
+        if(match){
+            if(match.length === 2){
+                return `The user's favorite book is ${match[1].trim()}.`;
+            }
+
+            const subject = match[1].trim();
+            const value = match[2].trim();
+
+            if(subject.toLowerCase() === "book")
+                return `The user's favorite book is ${value}.`;
+
+            if(subject.toLowerCase() === "movie")
+                return `The user's favorite movie is ${value}.`;
+
+            if(subject.toLowerCase() === "game")
+                return `The user's favorite game is ${value}.`;
+
+            if(subject.toLowerCase() === "song")
+                return `The user's favorite song is ${value}.`;
+
+            if(subject.toLowerCase() === "food")
+                return `The user's favorite food is ${value}.`;
+
+            if(subject.toLowerCase() === "color")
+                return `The user's favorite color is ${value}.`;
+
+            return `The user's favorite ${subject} is ${value}.`;
+        }
+    }
+
+    return null;
 }
 
 
@@ -1542,6 +1819,18 @@ async function sendMessage(){
 
     });
 
+    // Everyone currently included in the conversation
+    // receives the same memory, so it follows them into
+    // their future one-on-one conversations.
+    const memoryFact =
+        extractMemoryFromUserMessage(text);
+
+    if(memoryFact){
+        addSharedMemory(
+            activeCharacters,
+            memoryFact
+        );
+    }
 
     saveConversation();
 
@@ -1572,7 +1861,7 @@ async function sendMessage(){
 
         const response =
             await fetch(
-                apiUrl("/chat"),
+                "/chat",
                 {
 
                     method:"POST",
@@ -1583,8 +1872,6 @@ async function sendMessage(){
                     },
 
                     body:JSON.stringify({
-
-                        clientId: CLIENT_ID,
 
                         character:
                             currentCharacter,
@@ -1600,10 +1887,9 @@ async function sendMessage(){
 
                         activeCharacters:
                             activeCharacters,
-                        activeEvent:
-                            activeEvent,
-                        worldPaused:
-                            worldPaused
+
+                        characterMemory:
+                            getSharedMemory()
 
                     })
 
@@ -1774,7 +2060,7 @@ async function regenerate(){
 
         const response =
             await fetch(
-                apiUrl("/chat"),
+                "/chat",
                 {
 
                     method:"POST",
@@ -1785,8 +2071,6 @@ async function regenerate(){
                     },
 
                     body:JSON.stringify({
-
-                        clientId: CLIENT_ID,
 
                         character:
                             currentCharacter,
@@ -1801,11 +2085,7 @@ async function regenerate(){
                             characters,
 
                         activeCharacters:
-                            activeCharacters,
-                        activeEvent:
-                            activeEvent,
-                        worldPaused:
-                            worldPaused
+                            activeCharacters
 
                     })
 
@@ -2142,72 +2422,142 @@ async function changeLocation(
     location
 ){
 
-    if(worldPaused){
-        addSystemMessage("The world is paused. Unpause it before traveling.");
-        return;
-    }
+    if(
+        worldPaused
+    ){
 
-    const fromLocation = currentLocation;
-
-    if(location === fromLocation){
-        document.getElementById("locationMenu").style.display = "none";
-        return;
-    }
-
-    document.getElementById("locationMenu").style.display = "none";
-    addSystemMessage(`🚶 Traveling from ${fromLocation} to ${location}...`);
-
-    try{
-        const response = await fetch(
-            apiUrl("/world/travel"),
-            {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    clientId:CLIENT_ID,
-                    from:fromLocation,
-                    destination:location,
-                    participants:activeCharacters,
-                    worldCharacters:characters
-                })
-            }
+        addSystemMessage(
+            "The world is paused. Unpause it before traveling."
         );
 
-        const data = await response.json();
+        return;
 
-        if(!response.ok)
-            throw new Error(data.error || "Travel failed");
+    }
 
-        currentLocation = location;
-        saveWorldState();
-        updateWorldUI();
+    if(
+        location === currentLocation
+    ){
 
-        // The story is player-facing world narration. It is NOT character dialogue.
-        if(data.story)
-            addSystemMessage("🚶 " + data.story);
+        document.getElementById(
+            "locationMenu"
+        ).style.display =
+            "none";
 
-        // Only characters who actually traveled with the player react.
-        // They never receive/read the narration text as part of their prompt.
-        if(Array.isArray(data.reactions)){
-            data.reactions.forEach(reaction => {
-                if(reaction && reaction.character && reaction.text){
-                    addMessage(
-                        reaction.character + ": " + reaction.text,
-                        "ai"
-                    );
+        return;
+
+    }
+
+
+    const previousLocation =
+        currentLocation;
+
+
+    document.getElementById(
+        "locationMenu"
+    ).style.display =
+        "none";
+
+
+    addSystemMessage(
+        `🚶 Traveling from the ${previousLocation} to the ${location}...`
+    );
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/world/travel",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        from:previousLocation,
+                        destination:location,
+                        participants:activeCharacters,
+                        messages:conversation,
+                        worldCharacters:characters,
+                        characterMemory:getSharedMemory()
+                    })
                 }
-            });
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Travel failed."
+            );
+
         }
 
-        naturalArrival(true);
+
+        if(data.story){
+
+            addSystemMessage(
+                data.story
+            );
+
+        }
+
+
+        currentLocation =
+            data.location ||
+            location;
+
+
+        saveWorldState();
+
+        updateWorldUI();
+
+
+        /*
+           Characters deliberately traveling with the user
+           remain part of the group. Other characters can
+           naturally appear after the arrival.
+        */
+
+        naturalArrival(
+            true
+        );
+
+        saveConversation();
+
 
     }catch(error){
-        console.error("Travel:", error);
-        // Keep the UI usable if the backend is temporarily unavailable.
-        currentLocation = location;
+
+        console.error(
+            "Travel error:",
+            error
+        );
+
+        /*
+           Keep the old behavior as a safe fallback if the
+           travel endpoint is temporarily unavailable.
+        */
+
+        currentLocation =
+            location;
+
         saveWorldState();
         updateWorldUI();
-        addSystemMessage(`You make your way from ${fromLocation} to ${location}.`);
+
+        addSystemMessage(
+            `You arrive at the ${location}.`
+        );
+
+        naturalArrival(
+            true
+        );
+
     }
 
 }
@@ -2273,11 +2623,9 @@ async function naturalWorldTick(){
 
         const response =
             await fetch(
-                apiUrl("/world/advance"),
+                "/world/advance",
                 {
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({clientId:CLIENT_ID})
+                    method:"POST"
                 }
             );
 
@@ -2293,9 +2641,6 @@ async function naturalWorldTick(){
 
             updateEventUI();
 
-            // The event affects the shared world, so present characters
-            // react automatically instead of waiting for the player.
-            await charactersReactToWorldEvent(data.event);
 
             addSystemMessage(
                 `🌎 ${data.event.title}: ${data.event.description}`
@@ -2520,106 +2865,6 @@ function showArrival(
 
 
 /* ============================================================
-   AUTOMATIC WORLD-EVENT REACTIONS
-============================================================ */
-
-async function charactersReactToWorldEvent(event){
-
-    if(worldPaused || !event)
-        return;
-
-    const present = activeCharacters.filter(
-        name => characters[name]
-    );
-
-    if(!present.length)
-        return;
-
-    // Ask the existing /chat endpoint to generate natural reactions.
-    // The current conversation is preserved, so this does not reset chat.
-    // A separate user message is NOT created.
-    for(let i = 0; i < present.length; i++){
-
-        if(worldPaused)
-            return;
-
-        const name = present[i];
-
-        // Give each character a chance to react, but don't force all of
-        // them to speak. This keeps group conversations natural.
-        if(present.length > 2 && Math.random() > .65)
-            continue;
-
-        await delay(650 + i * 500);
-
-        try{
-            const response = await fetch(
-                apiUrl("/chat"),
-                {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({
-                        clientId: CLIENT_ID,
-                        character:name,
-                        location:currentLocation,
-                        messages:conversation,
-                        worldCharacters:characters,
-                        activeCharacters:activeCharacters,
-                        activeEvent:activeEvent,
-                        worldPaused:worldPaused,
-                        eventReaction:true,
-                        reactingCharacter:name
-                    })
-                }
-            );
-
-            const data = await response.json();
-
-            if(!response.ok)
-                throw new Error(data.error || "Event reaction failed");
-
-            const answer = data.response;
-
-            if(answer){
-                addMessage(answer, "ai");
-
-                conversation.push({
-                    role:"assistant",
-                    character:name,
-                    content:answer,
-                    eventReaction:true
-                });
-
-                saveConversation();
-            }
-
-        }catch(error){
-            console.error("Event reaction:", error);
-        }
-    }
-}
-
-function delay(ms){
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function dismissEvent(){
-
-    activeEvent = null;
-    updateEventUI();
-    saveWorldState();
-
-    fetch(apiUrl("/world/event/clear"), {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({clientId:CLIENT_ID})
-    }).catch(error => console.error("Clear event:", error));
-}
-
-
-/* ============================================================
    EVENTS
 ============================================================ */
 
@@ -2640,11 +2885,9 @@ async function triggerEvent(){
 
         const response =
             await fetch(
-                apiUrl("/world/event"),
+                "/world/event",
                 {
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify({clientId:CLIENT_ID})
+                    method:"POST"
                 }
             );
 
@@ -2661,9 +2904,6 @@ async function triggerEvent(){
 
             updateEventUI();
 
-            // The event affects the shared world, so present characters
-            // react automatically instead of waiting for the player.
-            await charactersReactToWorldEvent(data.event);
 
             addSystemMessage(
                 `🌎 ${data.event.title}: ${data.event.description}`
@@ -2746,7 +2986,7 @@ async function togglePause(){
     try{
 
         await fetch(
-                apiUrl("/world"),
+            "/world",
             {
 
                 method:"POST",
@@ -2757,8 +2997,6 @@ async function togglePause(){
                 },
 
                 body:JSON.stringify({
-
-                    clientId: CLIENT_ID,
 
                     paused:
                         worldPaused
@@ -3049,6 +3287,12 @@ function closeWorldReset(){
 
 async function resetWorld(){
 
+    clearSharedMemory();
+
+    localStorage.removeItem(
+        STORY_STORAGE_KEY
+    );
+
     for(
         let i =
             localStorage.length - 1;
@@ -3085,11 +3329,9 @@ async function resetWorld(){
     try{
 
         await fetch(
-                apiUrl("/world/reset"),
+            "/world/reset",
             {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({clientId:CLIENT_ID})
+                method:"POST"
             }
         );
 
@@ -3127,7 +3369,6 @@ async function resetWorld(){
     activeEvent =
         null;
 
-    updateEventUI();
 
     stopNaturalWorld();
 
@@ -3245,13 +3486,6 @@ document.addEventListener(
 );
 
 
-document.addEventListener("keydown", event => {
-    if(event.key === "Escape" && activeEvent){
-        dismissEvent();
-    }
-});
-
-
 /* ============================================================
    SAVE BEFORE LEAVING
 ============================================================ */
@@ -3274,11 +3508,561 @@ window.addEventListener(
 
 loadCharacters();
 
+
+/* ============================================================
+   CINEMATIC STORY MODE
+============================================================ */
+
+const STORY_STORAGE_KEY =
+    "schoolWorldCinematicStory";
+
+let storyState = null;
+
+
+function loadStoryState(){
+
+    const saved =
+        localStorage.getItem(
+            STORY_STORAGE_KEY
+        );
+
+    if(!saved)
+        return null;
+
+    try{
+        return JSON.parse(saved);
+    }catch{
+        return null;
+    }
+}
+
+
+function saveStoryState(){
+
+    if(!storyState)
+        return;
+
+    localStorage.setItem(
+        STORY_STORAGE_KEY,
+        JSON.stringify(storyState)
+    );
+
+}
+
+
+function clearStoryState(){
+
+    localStorage.removeItem(
+        STORY_STORAGE_KEY
+    );
+
+    storyState = null;
+
+}
+
+
+function openStoryMode(){
+
+    document.getElementById(
+        "home"
+    ).style.display = "none";
+
+    document.getElementById(
+        "chat"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyMode"
+    ).style.display = "block";
+
+    storyState =
+        loadStoryState();
+
+    if(
+        storyState &&
+        storyState.scene
+    ){
+
+        renderStory();
+
+    }else{
+
+        startNewStory();
+
+    }
+
+}
+
+
+function exitStoryMode(){
+
+    saveStoryState();
+
+    document.getElementById(
+        "storyMode"
+    ).style.display = "none";
+
+    document.getElementById(
+        "home"
+    ).style.display = "block";
+
+}
+
+
+function renderStory(){
+
+    if(!storyState)
+        return;
+
+    document.getElementById(
+        "storyTitle"
+    ).textContent =
+        storyState.title ||
+        "Story Mode";
+
+    document.getElementById(
+        "storyChapter"
+    ).textContent =
+        "Chapter " +
+        (storyState.chapter || 1);
+
+    const scene =
+        document.getElementById(
+            "storyScene"
+        );
+
+    scene.textContent =
+        storyState.scene || "";
+
+    const consequence =
+        document.getElementById(
+            "storyConsequences"
+        );
+
+    if(storyState.consequences){
+
+        consequence.textContent =
+            "CONSEQUENCE: " +
+            storyState.consequences;
+
+        consequence.style.display =
+            "block";
+
+    }else{
+
+        consequence.style.display =
+            "none";
+
+    }
+
+    const choices =
+        document.getElementById(
+            "storyChoices"
+        );
+
+    choices.innerHTML = "";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display = "none";
+
+    const ending =
+        document.getElementById(
+            "storyEnding"
+        );
+
+    if(storyState.ending){
+
+        choices.innerHTML = "";
+
+        ending.style.display =
+            "block";
+
+        document.getElementById(
+            "storyEndingText"
+        ).textContent =
+            storyState.consequences ||
+            "Your choices brought this chapter of the story to its conclusion.";
+
+    }else{
+
+        ending.style.display =
+            "none";
+
+        (storyState.choices || [])
+            .forEach(choice => {
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.className =
+                    "storyChoice";
+
+                button.innerHTML =
+                    `<div class="storyChoiceId">
+                        ${escapeHtml(choice.id || "")}
+                    </div>
+                    <div class="storyChoiceText">
+                        ${escapeHtml(choice.text || "")}
+                    </div>
+                    <div class="storyChoicePreview">
+                        ${escapeHtml(choice.preview || "")}
+                    </div>`;
+
+                button.onclick =
+                    () => chooseStory(
+                        choice
+                    );
+
+                choices.appendChild(
+                    button
+                );
+
+            });
+
+    }
+
+    setTimeout(
+        () => {
+            document.getElementById(
+                "storyContent"
+            ).scrollTop = 0;
+        },
+        0
+    );
+
+}
+
+
+async function startNewStory(){
+
+    if(
+        storyState &&
+        storyState.history &&
+        storyState.history.length
+    ){
+
+        const confirmed =
+            confirm(
+                "Start a completely new story? Your current branch will be replaced."
+            );
+
+        if(!confirmed)
+            return;
+
+    }
+
+    storyState = {
+        story_id:
+            "story_" +
+            Date.now(),
+
+        title:
+            "Story Mode",
+
+        chapter:1,
+
+        scene:"",
+
+        choices:[],
+
+        consequences:"",
+
+        variables:{},
+
+        history:[],
+
+        ending:false
+    };
+
+    localStorage.setItem(
+        STORY_STORAGE_KEY,
+        JSON.stringify(storyState)
+    );
+
+    document.getElementById(
+        "storyScene"
+    ).textContent = "";
+
+    document.getElementById(
+        "storyChoices"
+    ).innerHTML = "";
+
+    document.getElementById(
+        "storyConsequences"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyEnding"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display = "block";
+
+    try{
+
+        const response =
+            await fetch(
+                "/story/start",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        worldCharacters:
+                            characters
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Story could not start."
+            );
+
+        }
+
+        storyState = {
+            story_id:
+                storyState.story_id,
+
+            title:
+                data.story.title,
+
+            chapter:
+                data.story.chapter,
+
+            scene:
+                data.story.scene,
+
+            choices:
+                data.story.choices || [],
+
+            consequences:"",
+
+            variables:
+                data.story.variables || {},
+
+            history:[],
+
+            ending:
+                Boolean(
+                    data.story.ending
+                )
+        };
+
+        saveStoryState();
+
+        renderStory();
+
+    }catch(error){
+
+        document.getElementById(
+            "storyLoading"
+        ).textContent =
+            "Story error: " +
+            error.message;
+
+        console.error(
+            "Story start error:",
+            error
+        );
+
+    }
+
+}
+
+
+async function chooseStory(choice){
+
+    if(
+        !storyState ||
+        storyState.ending
+    )
+        return;
+
+    const buttons =
+        document.querySelectorAll(
+            ".storyChoice"
+        );
+
+    buttons.forEach(
+        button => {
+            button.disabled = true;
+            button.style.opacity = ".5";
+        }
+    );
+
+    document.getElementById(
+        "storyLoading"
+    ).textContent =
+        "Your choice is changing what happens next...";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display =
+        "block";
+
+    try{
+
+        const response =
+            await fetch(
+                "/story/choose",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+
+                        title:
+                            storyState.title,
+
+                        state:
+                            storyState,
+
+                        choice_id:
+                            choice.id,
+
+                        choice_text:
+                            choice.text,
+
+                        worldCharacters:
+                            characters
+
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Story choice failed."
+            );
+
+        }
+
+        const record =
+            data.record || {};
+
+        if(!Array.isArray(
+            storyState.history
+        )){
+            storyState.history = [];
+        }
+
+        storyState.history.push({
+            chapter:
+                record.chapter,
+
+            choice_id:
+                record.choice_id,
+
+            choice_text:
+                record.choice_text,
+
+            consequences:
+                record.consequences
+        });
+
+        storyState.history =
+            storyState.history.slice(
+                -40
+            );
+
+        storyState.chapter =
+            data.story.chapter;
+
+        storyState.scene =
+            data.story.scene;
+
+        storyState.choices =
+            data.story.choices || [];
+
+        storyState.consequences =
+            data.story.consequences || "";
+
+        storyState.variables =
+            data.story.variables ||
+            storyState.variables;
+
+        storyState.ending =
+            Boolean(
+                data.story.ending
+            );
+
+        saveStoryState();
+
+        renderStory();
+
+    }catch(error){
+
+        document.getElementById(
+            "storyLoading"
+        ).textContent =
+            "Story error: " +
+            error.message;
+
+        buttons.forEach(
+            button => {
+                button.disabled = false;
+                button.style.opacity = "1";
+            }
+        );
+
+        console.error(
+            "Story choice error:",
+            error
+        );
+
+    }
+
+}
+
+
+function escapeHtml(value){
+
+    return String(value)
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
+}
+
+
 </script>
 
 </body>
 </html>
-<script>
-// Final backend connection check for GitHub Pages + Render.
-window.addEventListener("load", () => { checkBackendConnection(); });
-</script>
