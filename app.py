@@ -1,1212 +1,827 @@
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import os
+import random
+import uuid
+from copy import deepcopy
 
-<title>School World</title>
+from flask import Flask, jsonify, render_template, request, session
+from openai import OpenAI
 
-<style>
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "school-world-secret-key")
 
-* {
-    box-sizing: border-box;
-}
+API_KEY = os.environ.get("OPENROUTER_API_KEY")
+MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-20b")
 
-body {
-    margin: 0;
-    background: #080b12;
-    color: #e9eef7;
-    font-family: Arial, Helvetica, sans-serif;
-}
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=API_KEY or "missing-key"
+)
 
-button {
-    cursor: pointer;
-    border: 0;
-}
+# ---------------------------------------------------------
+# WORLD STORAGE
+# ---------------------------------------------------------
 
-header {
-    height: 64px;
-    background: #0d111b;
-    border-bottom: 1px solid #222a3a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 22px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
+WORLDS = {}
 
-.logo {
-    font-size: 21px;
-    font-weight: bold;
-}
+LOCATIONS = [
+    "Classroom",
+    "Library",
+    "Cafeteria",
+    "Gym",
+    "Courtyard",
+    "Science Lab",
+    "Music Room",
+    "Art Room",
+    "Rooftop",
+    "Hallway",
+    "Computer Lab"
+]
 
-.header-buttons {
-    display: flex;
-    gap: 8px;
-}
+CHARACTERS = [
+    {
+        "name": "Alex",
+        "personality": "quiet, observant, intelligent, and suspicious of strange events"
+    },
+    {
+        "name": "Maya",
+        "personality": "confident, energetic, loyal, and willing to take risks"
+    },
+    {
+        "name": "Jordan",
+        "personality": "funny, sarcastic, friendly, but hides serious feelings"
+    },
+    {
+        "name": "Sam",
+        "personality": "curious, analytical, investigative, and easily fascinated"
+    }
+]
 
-.header-buttons button {
-    background: #182132;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 8px;
-}
+STORY_THEMES = [
+    {
+        "title": "The Locked Wing",
+        "setup": (
+            "A normally sealed wing of the school suddenly opens after the final bell. "
+            "Nobody admits knowing why."
+        )
+    },
+    {
+        "title": "The Missing Memory",
+        "setup": (
+            "One student insists that something important happened yesterday, "
+            "but everyone else remembers the day differently."
+        )
+    },
+    {
+        "title": "The School After Dark",
+        "setup": (
+            "After the lights go out, one hallway remains illuminated even though "
+            "the entire school should be empty."
+        )
+    },
+    {
+        "title": "The Unsent Message",
+        "setup": (
+            "A forgotten computer displays a message containing your name, "
+            "even though nobody remembers typing it."
+        )
+    },
+    {
+        "title": "The Hidden Floor",
+        "setup": (
+            "An elevator button appears that nobody has ever seen before."
+        )
+    },
+    {
+        "title": "The Substitute",
+        "setup": (
+            "A substitute teacher arrives who seems to know details about students "
+            "that they should not know."
+        )
+    }
+]
 
-.header-buttons button:hover {
-    background: #243149;
-}
+ENDING_TYPES = [
+    "Truth",
+    "Trust",
+    "Rebellion",
+    "Quiet Escape",
+    "Discovery",
+    "Sacrifice"
+]
 
-.layout {
-    display: grid;
-    grid-template-columns: 270px 1fr 360px;
-    min-height: calc(100vh - 64px);
-}
 
-/* LEFT */
+# ---------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------
 
-.sidebar {
-    background: #0b0f17;
-    border-right: 1px solid #222a3a;
-    padding: 18px;
-    overflow-y: auto;
-}
+def clean_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
 
-.sidebar h2 {
-    margin-top: 0;
-    font-size: 17px;
-}
 
-.world-button {
-    width: 100%;
-    text-align: left;
-    background: #131a28;
-    color: white;
-    padding: 13px;
-    border-radius: 9px;
-    margin-bottom: 9px;
-    border: 1px solid #202b3e;
-}
+def make_world():
+    rng = random.Random(uuid.uuid4().int)
 
-.world-button:hover {
-    background: #1b2536;
-}
+    theme = rng.choice(STORY_THEMES)
 
-.world-button.active {
-    border-color: #718cff;
-}
+    characters = deepcopy(CHARACTERS)
+    rng.shuffle(characters)
 
-.world-small {
-    display: block;
-    color: #8d9ab1;
-    font-size: 11px;
-    margin-top: 5px;
-}
+    locations = LOCATIONS[:]
+    rng.shuffle(locations)
 
-/* CENTER */
+    endings = ENDING_TYPES[:]
+    rng.shuffle(endings)
 
-.story-area {
-    padding: 25px;
-    overflow-y: auto;
-}
+    world_id = str(uuid.uuid4())
 
-.world-title {
-    font-size: 27px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
+    nodes = {}
 
-.theme {
-    color: #8896ad;
-    margin-bottom: 20px;
-}
+    # -----------------------------------------------------
+    # ROOT
+    # -----------------------------------------------------
 
-.scene-card {
-    background: #101621;
-    border: 1px solid #222c3e;
-    border-radius: 14px;
-    padding: 25px;
-    max-width: 950px;
-    margin: auto;
-}
-
-.scene-title {
-    font-size: 25px;
-    margin-bottom: 5px;
-}
-
-.scene-location {
-    color: #8290aa;
-    margin-bottom: 22px;
-}
-
-.scene-text {
-    white-space: pre-wrap;
-    line-height: 1.75;
-    font-size: 16px;
-}
-
-.choices {
-    margin-top: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.choice {
-    background: #182237;
-    color: white;
-    padding: 15px 18px;
-    border-radius: 9px;
-    text-align: left;
-    border: 1px solid #273550;
-    font-size: 15px;
-}
-
-.choice:hover {
-    background: #243352;
-    border-color: #718cff;
-}
-
-.ending {
-    margin-top: 25px;
-    padding: 20px;
-    border: 1px solid #5d78d8;
-    border-radius: 12px;
-    background: #141c31;
-}
-
-.loading {
-    text-align: center;
-    color: #8896ad;
-    padding: 50px;
-}
-
-/* RIGHT TREE */
-
-.tree-panel {
-    background: #0b0f17;
-    border-left: 1px solid #222a3a;
-    padding: 18px;
-    overflow-y: auto;
-}
-
-.tree-panel h2 {
-    margin-top: 0;
-}
-
-.tree-description {
-    color: #8491a7;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.tree {
-    margin-top: 20px;
-}
-
-.chapter {
-    color: #7584a0;
-    font-size: 11px;
-    font-weight: bold;
-    margin: 18px 0 7px;
-    text-transform: uppercase;
-}
-
-.node {
-    position: relative;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 9px;
-    border: 1px solid #202a3c;
-    background: #111722;
-}
-
-.node.seen {
-    border-color: #38506e;
-    background: #131d2b;
-}
-
-.node.current {
-    border-color: #728dff;
-    box-shadow: 0 0 0 1px #728dff;
-}
-
-.node.unseen {
-    opacity: 0.62;
-}
-
-.node.ending {
-    background: #171727;
-}
-
-.node-title {
-    font-size: 13px;
-    font-weight: bold;
-}
-
-.node-location {
-    font-size: 10px;
-    color: #78869e;
-    margin-top: 4px;
-}
-
-.node-status {
-    font-size: 10px;
-    margin-top: 8px;
-}
-
-.seen-status {
-    color: #75d99a;
-}
-
-.unseen-status {
-    color: #77839a;
-}
-
-.current-status {
-    color: #8ca3ff;
-}
-
-.legend {
-    margin-top: 18px;
-    padding: 12px;
-    border-radius: 9px;
-    background: #101620;
-    font-size: 11px;
-    color: #8996aa;
-    line-height: 1.8;
-}
-
-/* MODALS */
-
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.75);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-}
-
-.modal.open {
-    display: flex;
-}
-
-.modal-box {
-    width: min(850px, 92vw);
-    max-height: 85vh;
-    overflow-y: auto;
-    background: #101621;
-    border: 1px solid #29354b;
-    border-radius: 14px;
-    padding: 24px;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close {
-    background: #222c3d;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 7px;
-}
-
-.world-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    background: #151d2b;
-    border: 1px solid #253149;
-    padding: 15px;
-    margin-top: 10px;
-    border-radius: 10px;
-}
-
-.world-actions {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-}
-
-.world-actions button {
-    padding: 8px 11px;
-    border-radius: 7px;
-    background: #253149;
-    color: white;
-}
-
-.world-actions button:hover {
-    background: #344463;
-}
-
-.delete-button {
-    background: #5c252d !important;
-}
-
-@media (max-width: 1100px) {
-    .layout {
-        grid-template-columns: 220px 1fr;
+    nodes["start"] = {
+        "id": "start",
+        "title": theme["title"],
+        "depth": 0,
+        "text": theme["setup"],
+        "choices": [],
+        "ending": None
     }
 
-    .tree-panel {
-        display: none;
-    }
-}
-
-@media (max-width: 700px) {
-    .layout {
-        display: block;
-    }
-
-    .sidebar {
-        display: none;
-    }
-
-    .story-area {
-        padding: 12px;
-    }
-
-    .scene-card {
-        padding: 17px;
-    }
-}
-
-</style>
-</head>
-
-<body>
-
-<header>
-
-    <div class="logo">
-        🌎 School World
-    </div>
-
-    <div class="header-buttons">
-        <button onclick="newWorld()">🌎 New World</button>
-        <button onclick="openWorlds()">📚 Worlds</button>
-        <button onclick="restartWorld()">🔄 Restart</button>
-    </div>
-
-</header>
-
-
-<div class="layout">
-
-    <aside class="sidebar">
-
-        <h2>Characters</h2>
-
-        <div id="characters">
-            No world loaded.
-        </div>
-
-    </aside>
-
-
-    <main class="story-area">
-
-        <div id="story">
-            <div class="loading">
-                Create a new world to begin.
-            </div>
-        </div>
-
-    </main>
-
-
-    <aside class="tree-panel">
-
-        <h2>🌳 Story Tree</h2>
-
-        <div class="tree-description">
-            The complete structure of this world is shown here.
-            Green nodes have been seen. Dim nodes have not been
-            reached yet.
-        </div>
-
-        <div id="tree" class="tree">
-            No world loaded.
-        </div>
-
-        <div class="legend">
-            🟢 Seen<br>
-            🔵 Current scene<br>
-            ⚪ Not seen yet<br>
-            🏁 Ending
-        </div>
-
-    </aside>
-
-</div>
-
-
-<!-- WORLDS MODAL -->
-
-<div id="worldModal" class="modal">
-
-    <div class="modal-box">
-
-        <div class="modal-header">
-
-            <h2>📚 Your Worlds</h2>
-
-            <button
-                class="close"
-                onclick="closeWorlds()">
-                Close
-            </button>
-
-        </div>
-
-        <div id="worldList">
-            Loading...
-        </div>
-
-    </div>
-
-</div>
-
-
-<script>
-
-let currentWorld = null;
-
-
-/* ============================================================
-   API
-   ============================================================ */
-
-async function api(url, options = {}) {
-
-    const response = await fetch(url, {
-        headers: {
-            "Content-Type": "application/json"
-        },
-        ...options
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || "Server error");
-    }
-
-    return data;
-}
-
-
-/* ============================================================
-   NEW WORLD
-   ============================================================ */
-
-async function newWorld() {
-
-    if (currentWorld) {
-
-        const okay = confirm(
-            "Create a completely new world?\n\n" +
-            "Your current world will remain saved in Replay Worlds."
-        );
-
-        if (!okay) return;
-    }
-
-    showLoading("Creating a completely new world...");
-
-    try {
-
-        const world = await api("/world/new", {
-            method: "POST"
-        });
-
-        currentWorld = world;
-
-        renderWorld();
-
-    } catch (error) {
-
-        showError(error);
-
-    }
-}
-
-
-/* ============================================================
-   LOAD WORLD
-   ============================================================ */
-
-async function loadWorld(id) {
-
-    closeWorlds();
-
-    showLoading("Loading world...");
-
-    try {
-
-        const world = await api(
-            "/world/" + encodeURIComponent(id)
-        );
-
-        currentWorld = world;
-
-        renderWorld();
-
-    } catch (error) {
-
-        showError(error);
-
-    }
-}
-
-
-/* ============================================================
-   CHOOSE
-   ============================================================ */
-
-async function choose(index) {
-
-    if (!currentWorld) return;
-
-    const scene = currentWorld.current_scene;
-
-    if (!scene.choices[index]) return;
-
-    disableChoices();
-
-    showLoading("The world is reacting to your decision...");
-
-    try {
-
-        const world = await api(
-            "/world/" +
-            encodeURIComponent(currentWorld.id) +
-            "/choose",
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    choice_index: index
+    # -----------------------------------------------------
+    # FIRST BRANCH
+    # -----------------------------------------------------
+
+    first_choices = [
+        ("Investigate immediately", "curiosity"),
+        ("Find someone you trust", "trust"),
+        ("Stay out of it", "caution")
+    ]
+
+    rng.shuffle(first_choices)
+
+    for i, (text, flag) in enumerate(first_choices):
+        node_id = f"a{i}"
+
+        nodes["start"]["choices"].append({
+            "id": node_id,
+            "text": text,
+            "next": node_id
+        })
+
+        nodes[node_id] = {
+            "id": node_id,
+            "title": text,
+            "depth": 1,
+            "text": (
+                f"Your decision to {text.lower()} changes the situation. "
+                f"The people around you react differently, and the mystery becomes "
+                f"more complicated."
+            ),
+            "choices": [],
+            "flag": flag,
+            "ending": None
+        }
+
+        # -------------------------------------------------
+        # SECOND BRANCH
+        # -------------------------------------------------
+
+        second_choices = [
+            ("Tell Alex what you discovered", "alex"),
+            ("Keep the information secret", "secret"),
+            ("Search another part of the school", "search")
+        ]
+
+        rng.shuffle(second_choices)
+
+        for j, (second_text, second_flag) in enumerate(second_choices):
+
+            node2 = f"b{i}_{j}"
+
+            nodes[node_id]["choices"].append({
+                "id": node2,
+                "text": second_text,
+                "next": node2
+            })
+
+            nodes[node2] = {
+                "id": node2,
+                "title": second_text,
+                "depth": 2,
+                "text": (
+                    "Your previous decision has consequences. "
+                    "Someone notices what you are doing, and the situation begins "
+                    "moving in a direction you did not completely expect."
+                ),
+                "choices": [],
+                "flag": second_flag,
+                "ending": None
+            }
+
+            # ---------------------------------------------
+            # FINAL BRANCH
+            # ---------------------------------------------
+
+            final_choices = [
+                ("Protect what you discovered", "protect"),
+                ("Tell everyone the truth", "truth"),
+                ("Use the information to your advantage", "power")
+            ]
+
+            rng.shuffle(final_choices)
+
+            for k, (final_text, final_flag) in enumerate(final_choices):
+
+                node3 = f"c{i}_{j}_{k}"
+
+                ending = endings[
+                    (i * 3 + j + k) % len(endings)
+                ]
+
+                nodes[node2]["choices"].append({
+                    "id": node3,
+                    "text": final_text,
+                    "next": node3
                 })
-            }
-        );
 
-        currentWorld = world;
+                nodes[node3] = {
+                    "id": node3,
+                    "title": final_text,
+                    "depth": 3,
+                    "text": (
+                        f"The consequences of your earlier choices finally collide. "
+                        f"You chose {flag}, then {second_flag}, and finally "
+                        f"{final_flag}. Those decisions determine how everything ends."
+                    ),
+                    "choices": [],
+                    "ending": ending
+                }
 
-        renderWorld();
+    world = {
+        "id": world_id,
+        "title": theme["title"],
+        "setup": theme["setup"],
+        "locations": locations,
+        "characters": characters,
+        "nodes": nodes,
 
-    } catch (error) {
+        "current": "start",
+        "visited": ["start"],
+        "history": [],
+        "flags": [],
 
-        showError(error);
+        "started": False,
+        "ended": False,
+        "ending": None,
 
+        "chat_history": []
     }
-}
+
+    WORLDS[world_id] = world
+
+    return world
 
 
-/* ============================================================
-   RESTART
-   ============================================================ */
+def get_world():
+    world_id = session.get("world_id")
 
-async function restartWorld() {
+    if world_id and world_id in WORLDS:
+        return WORLDS[world_id]
 
-    if (!currentWorld) {
+    world = make_world()
+    session["world_id"] = world["id"]
 
-        alert("No world is currently loaded.");
-
-        return;
-    }
-
-    const okay = confirm(
-        "Restart this exact world?\n\n" +
-        "The story tree, characters and seed will stay the same, " +
-        "but your progress will be reset."
-    );
-
-    if (!okay) return;
-
-    showLoading("Restarting world...");
-
-    try {
-
-        const world = await api(
-            "/world/" +
-            encodeURIComponent(currentWorld.id) +
-            "/restart",
-            {
-                method: "POST"
-            }
-        );
-
-        currentWorld = world;
-
-        renderWorld();
-
-    } catch (error) {
-
-        showError(error);
-
-    }
-}
+    return world
 
 
-/* ============================================================
-   WORLDS
-   ============================================================ */
+def public_world(world):
+    result = deepcopy(world)
 
-async function openWorlds() {
+    # Don't send the entire AI conversation to the browser API.
+    result.pop("chat_history", None)
 
-    document
-        .getElementById("worldModal")
-        .classList
-        .add("open");
+    return result
 
-    const container =
-        document.getElementById("worldList");
 
-    container.innerHTML = "Loading worlds...";
+# ---------------------------------------------------------
+# AI
+# ---------------------------------------------------------
 
-    try {
+def build_messages(world, user_message, story_mode=False):
 
-        const data = await api("/worlds");
+    character_info = "\n".join(
+        f"- {c['name']}: {c['personality']}"
+        for c in world["characters"]
+    )
 
-        if (!data.worlds.length) {
+    recent_history = world["chat_history"][-24:]
 
-            container.innerHTML =
-                "<p>No saved worlds yet.</p>";
+    location = world["locations"][0]
 
-            return;
+    system_prompt = f"""
+You are the AI inside a living school-world game.
+
+WORLD:
+Title: {world["title"]}
+Current location: {location}
+
+CHARACTERS:
+{character_info}
+
+CURRENT STORY NODE:
+{world["current"]}
+
+WORLD FLAGS:
+{", ".join(world["flags"]) if world["flags"] else "None"}
+
+IMPORTANT:
+
+The player controls themselves.
+
+Never speak as the player.
+
+Never say that the player "must" perform an action.
+
+If the player says they traveled from one location to another,
+characters may notice their arrival naturally.
+
+For example, DO NOT say:
+"You traveled from the classroom to the library."
+
+Instead, have the character react naturally:
+"You made it. Maya looks up from the table and raises an eyebrow."
+
+Characters should feel like actual people.
+
+They can:
+- disagree
+- joke
+- become suspicious
+- remember previous conversations
+- become closer to the player
+- become angry
+- change their opinions
+- make their own decisions
+- react to events
+- interrupt
+- ask questions
+- have different personalities
+
+Do not repeat internal game instructions.
+
+Do not reveal hidden story tree information.
+
+Keep conversations substantial.
+
+When a response deserves it, write several paragraphs rather than only
+one or two sentences.
+
+Do not rush the story toward an ending.
+
+Keep continuity with previous conversations.
+"""
+
+    if story_mode:
+        system_prompt += """
+STORY MODE IS ACTIVE.
+
+The current story node and previous choices are canon.
+
+The player's choices must have consequences.
+
+Do not reset the story because of a normal conversation.
+
+Do not invent a completely unrelated storyline.
+
+Make events feel connected to previous decisions.
+"""
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt
         }
+    ]
 
-        container.innerHTML = "";
+    for item in recent_history:
+        messages.append(item)
 
-        for (const world of data.worlds) {
+    messages.append({
+        "role": "user",
+        "content": clean_text(user_message)
+    })
 
-            const row =
-                document.createElement("div");
+    return messages
 
-            row.className = "world-row";
 
-            const ending =
-                world.completed
-                ? "Ending: " + world.ending
-                : "In progress";
+def ask_ai(world, message, story_mode=False):
 
-            row.innerHTML = `
-                <div>
-                    <strong>${escapeHtml(world.title)}</strong>
-                    <div class="world-small">
-                        Chapter ${world.chapter}
-                        • ${escapeHtml(ending)}
-                    </div>
-                    <div class="world-small">
-                        Seed: ${world.seed}
-                    </div>
-                </div>
+    if not API_KEY:
+        raise RuntimeError(
+            "OPENROUTER_API_KEY is missing from Render Environment Variables."
+        )
 
-                <div class="world-actions">
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=build_messages(
+            world,
+            message,
+            story_mode
+        ),
+        temperature=0.9,
+        max_tokens=1200
+    )
 
-                    <button
-                        onclick="loadWorld('${world.id}')">
-                        ▶ Continue
-                    </button>
+    answer = response.choices[0].message.content
 
-                    <button
-                        onclick="restartSpecific('${world.id}')">
-                        🔄 Restart
-                    </button>
+    if not answer:
+        answer = "I don't have a response right now."
 
-                    <button
-                        class="delete-button"
-                        onclick="deleteWorld('${world.id}')">
-                        🗑 Delete
-                    </button>
+    answer = clean_text(answer)
 
-                </div>
-            `;
+    world["chat_history"].append({
+        "role": "user",
+        "content": clean_text(message)
+    })
 
-            container.appendChild(row);
-        }
+    world["chat_history"].append({
+        "role": "assistant",
+        "content": answer
+    })
 
-    } catch (error) {
+    # Keeps conversations long without allowing infinite memory growth.
+    world["chat_history"] = world["chat_history"][-50:]
 
-        container.innerHTML =
-            "<p>" +
-            escapeHtml(error.message) +
-            "</p>";
+    return answer
 
-    }
-}
 
+# ---------------------------------------------------------
+# HOME
+# ---------------------------------------------------------
 
-function closeWorlds() {
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-    document
-        .getElementById("worldModal")
-        .classList
-        .remove("open");
-}
 
+# ---------------------------------------------------------
+# WORLD API
+# ---------------------------------------------------------
 
-async function restartSpecific(id) {
+@app.get("/api/world")
+def api_world():
 
-    const okay = confirm(
-        "Restart this world from the beginning?"
-    );
+    world = get_world()
 
-    if (!okay) return;
+    return jsonify(public_world(world))
 
-    try {
 
-        const world = await api(
-            "/world/" +
-            encodeURIComponent(id) +
-            "/restart",
-            {
-                method: "POST"
-            }
-        );
+@app.post("/world/reset")
+def reset_world():
 
-        currentWorld = world;
+    old_world = get_world()
 
-        closeWorlds();
+    old_world["ended"] = True
 
-        renderWorld();
+    new_world = make_world()
 
-    } catch (error) {
+    session["world_id"] = new_world["id"]
 
-        alert(error.message);
+    return jsonify(public_world(new_world))
 
-    }
-}
 
+@app.post("/world/advance")
+def advance_world():
 
-async function deleteWorld(id) {
+    world = get_world()
 
-    const okay = confirm(
-        "Permanently delete this world?"
-    );
+    return jsonify({
+        "ok": True,
+        "world_id": world["id"],
+        "location": world["locations"][0]
+    })
 
-    if (!okay) return;
 
-    try {
+# ---------------------------------------------------------
+# NORMAL AI CHAT
+# ---------------------------------------------------------
 
-        await api(
-            "/world/" +
-            encodeURIComponent(id),
-            {
-                method: "DELETE"
-            }
-        );
+@app.post("/chat")
+def chat():
 
-        if (
-            currentWorld &&
-            currentWorld.id === id
-        ) {
-            currentWorld = null;
+    world = get_world()
 
-            document.getElementById("story").innerHTML =
-                `<div class="loading">
-                    World deleted.
-                </div>`;
+    data = request.get_json(silent=True) or {}
 
-            document.getElementById("tree").innerHTML =
-                "No world loaded.";
+    message = clean_text(data.get("message"))
 
-            document.getElementById("characters").innerHTML =
-                "No world loaded.";
-        }
+    if not message:
+        return jsonify({
+            "error": "Message cannot be empty."
+        }), 400
 
-        openWorlds();
+    try:
 
-    } catch (error) {
+        answer = ask_ai(
+            world,
+            message,
+            story_mode=False
+        )
 
-        alert(error.message);
+        return jsonify({
+            "reply": answer,
+            "world": public_world(world)
+        })
 
-    }
-}
+    except Exception as exc:
 
+        app.logger.exception("Chat failed")
 
-/* ============================================================
-   RENDER WORLD
-   ============================================================ */
+        return jsonify({
+            "error": f"AI error: {clean_text(exc)}"
+        }), 500
 
-function renderWorld() {
 
-    renderStory();
+# ---------------------------------------------------------
+# STORY START
+# ---------------------------------------------------------
 
-    renderCharacters();
+@app.post("/story/start")
+def story_start():
 
-    renderTree();
+    world = get_world()
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
+    world["started"] = True
 
+    node = world["nodes"][world["current"]]
 
-/* ============================================================
-   STORY
-   ============================================================ */
+    prompt = f"""
+Begin the story naturally.
 
-function renderStory() {
+TITLE:
+{world["title"]}
 
-    const story =
-        document.getElementById("story");
+SCENE:
+{node["text"]}
 
-    const scene =
-        currentWorld.current_scene;
+Introduce the situation and characters.
 
-    let html = `
+Do not list the player's choices as system instructions.
 
-        <div class="world-title">
-            ${escapeHtml(currentWorld.title)}
-        </div>
+Make it feel like the opening scene of an interactive game.
 
-        <div class="theme">
-            Theme: ${escapeHtml(currentWorld.theme)}
-            • Seed: ${currentWorld.seed}
-        </div>
+Make the scene detailed and interesting.
+"""
 
-        <div class="scene-card">
+    try:
 
-            <div class="scene-title">
-                ${escapeHtml(scene.title)}
-            </div>
+        answer = ask_ai(
+            world,
+            prompt,
+            story_mode=True
+        )
 
-            <div class="scene-location">
-                Chapter ${scene.chapter}
-                • 📍 ${escapeHtml(scene.location)}
-            </div>
+        return jsonify({
+            "reply": answer,
+            "world": public_world(world)
+        })
 
-            <div class="scene-text">
-                ${escapeHtml(scene.description)}
-            </div>
-    `;
+    except Exception as exc:
 
-    if (currentWorld.completed) {
+        app.logger.exception("Story start failed")
 
-        html += `
+        return jsonify({
+            "error": f"Story error: {clean_text(exc)}"
+        }), 500
 
-            <div class="ending">
 
-                <strong>
-                    🏁 ${escapeHtml(currentWorld.ending)}
-                </strong>
+# ---------------------------------------------------------
+# STORY CHOICE
+# ---------------------------------------------------------
 
-                <p>
-                    This world has reached one of its
-                    possible major endings.
-                </p>
+@app.post("/story/choose")
+def story_choose():
 
-                <button
-                    class="choice"
-                    onclick="restartWorld()">
-                    🔄 Restart This World
-                </button>
+    world = get_world()
 
-                <button
-                    class="choice"
-                    onclick="newWorld()">
-                    🌎 Create A Completely New World
-                </button>
+    data = request.get_json(silent=True) or {}
 
-            </div>
-        `;
+    choice_id = clean_text(data.get("choice_id"))
 
-    } else {
+    current_node = world["nodes"].get(
+        world["current"]
+    )
 
-        html += `
-            <div class="choices">
-        `;
+    if not current_node:
 
-        scene.choices.forEach((choice, index) => {
+        return jsonify({
+            "error": "Current story node does not exist."
+        }), 500
 
-            html += `
-                <button
-                    class="choice"
-                    onclick="choose(${index})">
+    choice = None
 
-                    ${index + 1}. 
-                    ${escapeHtml(choice.text)}
+    for possible_choice in current_node["choices"]:
 
-                </button>
-            `;
+        if possible_choice["id"] == choice_id:
 
-        });
+            choice = possible_choice
+            break
 
-        html += `
-            </div>
-        `;
-    }
+    if not choice:
 
-    html += `
-        </div>
-    `;
+        return jsonify({
+            "error": "That choice is not available."
+        }), 400
 
-    story.innerHTML = html;
-}
+    next_node = world["nodes"].get(
+        choice["next"]
+    )
 
+    if not next_node:
 
-/* ============================================================
-   CHARACTERS
-   ============================================================ */
+        return jsonify({
+            "error": "Next story node does not exist."
+        }), 500
 
-function renderCharacters() {
+    # Record choice.
+    world["history"].append({
+        "from": current_node["id"],
+        "choice": choice["text"],
+        "to": next_node["id"]
+    })
 
-    const container =
-        document.getElementById("characters");
+    world["current"] = next_node["id"]
 
-    if (!currentWorld) {
+    if next_node.get("flag"):
 
-        container.innerHTML =
-            "No world loaded.";
+        if next_node["flag"] not in world["flags"]:
 
-        return;
-    }
+            world["flags"].append(
+                next_node["flag"]
+            )
 
-    container.innerHTML = "";
+    if next_node["id"] not in world["visited"]:
 
-    Object.values(
-        currentWorld.characters
-    ).forEach(character => {
+        world["visited"].append(
+            next_node["id"]
+        )
 
-        const div =
-            document.createElement("div");
+    if next_node.get("ending"):
 
-        div.style.background = "#131a28";
-        div.style.padding = "11px";
-        div.style.borderRadius = "8px";
-        div.style.marginBottom = "8px";
+        world["ended"] = True
+        world["ending"] = next_node["ending"]
 
-        const relationship =
-            character.relationship >= 3
-            ? "Close"
-            : character.relationship > 0
-            ? "Friendly"
-            : character.relationship < 0
-            ? "Distrustful"
-            : "Neutral";
+    prompt = f"""
+The player just made this choice:
 
-        div.innerHTML = `
-            <strong>
-                ${escapeHtml(character.name)}
-            </strong>
+"{choice["text"]}"
 
-            <div class="world-small">
-                ${escapeHtml(character.trait)}
-            </div>
+The story has now moved to:
 
-            <div class="world-small">
-                Relationship: ${relationship}
-            </div>
+{next_node["title"]}
 
-            <div class="world-small">
-                Trust: ${character.trust}
-            </div>
-        `;
+SCENE:
 
-        container.appendChild(div);
-    });
-}
+{next_node["text"]}
 
+PREVIOUS CHOICES:
 
-/* ============================================================
-   STORY TREE
-   ============================================================ */
+{world["history"][-8:]}
 
-function renderTree() {
+Write the next major scene.
 
-    const treeContainer =
-        document.getElementById("tree");
+Make the player's choice visibly matter.
 
-    if (!currentWorld) {
+Characters should react naturally.
 
-        treeContainer.innerHTML =
-            "No world loaded.";
+Do not speak for the player.
 
-        return;
-    }
+If this is an ending, write a substantial ending scene that reflects
+the player's previous decisions instead of simply saying "You won."
+"""
 
-    treeContainer.innerHTML = "";
+    try:
 
-    let currentChapter = null;
+        answer = ask_ai(
+            world,
+            prompt,
+            story_mode=True
+        )
 
-    currentWorld.tree.forEach(node => {
+        return jsonify({
+            "reply": answer,
+            "world": public_world(world)
+        })
 
-        if (node.chapter !== currentChapter) {
+    except Exception as exc:
 
-            currentChapter = node.chapter;
+        app.logger.exception("Story choice failed")
 
-            const chapter =
-                document.createElement("div");
+        return jsonify({
+            "error": f"Story error: {clean_text(exc)}"
+        }), 500
 
-            chapter.className = "chapter";
 
-            chapter.textContent =
-                "Chapter " + currentChapter;
+# ---------------------------------------------------------
+# STORY TREE
+# ---------------------------------------------------------
 
-            treeContainer.appendChild(chapter);
-        }
+@app.get("/story/tree")
+def story_tree():
 
-        const div =
-            document.createElement("div");
+    world = get_world()
 
-        div.className = "node";
+    nodes = []
 
-        if (node.seen) {
-            div.classList.add("seen");
-        } else {
-            div.classList.add("unseen");
-        }
+    for node in world["nodes"].values():
 
-        if (
-            node.id ===
-            currentWorld.current_node
-        ) {
-            div.classList.add("current");
-        }
+        nodes.append({
+            "id": node["id"],
+            "title": node["title"],
+            "depth": node["depth"],
+            "text": node["text"],
+            "choices": node["choices"],
+            "ending": node.get("ending"),
+            "seen": node["id"] in world["visited"],
+            "current": node["id"] == world["current"]
+        })
 
-        if (node.type === "ending") {
-            div.classList.add("ending");
-        }
+    nodes.sort(
+        key=lambda x: (
+            x["depth"],
+            x["id"]
+        )
+    )
 
-        let status;
+    return jsonify({
+        "world_id": world["id"],
+        "title": world["title"],
+        "nodes": nodes
+    })
 
-        if (
-            node.id ===
-            currentWorld.current_node
-        ) {
 
-            status =
-                `<div class="node-status current-status">
-                    🔵 CURRENT
-                </div>`;
+# ---------------------------------------------------------
+# REPLAY
+# ---------------------------------------------------------
 
-        } else if (node.seen) {
+@app.post("/world/replay")
+def replay_world():
 
-            status =
-                `<div class="node-status seen-status">
-                    🟢 SEEN
-                </div>`;
+    data = request.get_json(silent=True) or {}
 
-        } else {
+    saved_world = data.get("world")
 
-            status =
-                `<div class="node-status unseen-status">
-                    ⚪ NOT SEEN YET
-                </div>`;
-        }
+    if not isinstance(saved_world, dict):
 
-        const ending =
-            node.type === "ending"
-            ? " 🏁"
-            : "";
+        return jsonify({
+            "error": "Invalid saved world."
+        }), 400
 
-        div.innerHTML = `
+    if not saved_world.get("id"):
 
-            <div class="node-title">
-                ${ending}
-                ${escapeHtml(node.title)}
-            </div>
+        return jsonify({
+            "error": "Saved world has no ID."
+        }), 400
 
-            <div class="node-location">
-                📍 ${escapeHtml(node.location)}
-            </div>
+    if not saved_world.get("nodes"):
 
-            ${status}
+        return jsonify({
+            "error": "Saved world has no story tree."
+        }), 400
 
-        `;
+    world = deepcopy(saved_world)
 
-        treeContainer.appendChild(div);
-    });
-}
+    # The browser does not save private API conversation data.
+    if "chat_history" not in world:
+        world["chat_history"] = []
 
+    WORLDS[world["id"]] = world
 
-/* ============================================================
-   UI HELPERS
-   ============================================================ */
+    session["world_id"] = world["id"]
 
-function showLoading(text) {
+    return jsonify(
+        public_world(world)
+    )
 
-    document.getElementById("story").innerHTML =
-        `<div class="loading">
-            ${escapeHtml(text)}
-        </div>`;
-}
 
+# ---------------------------------------------------------
+# START SERVER
+# ---------------------------------------------------------
 
-function showError(error) {
+if __name__ == "__main__":
 
-    document.getElementById("story").innerHTML =
-        `<div class="scene-card">
-            <h2>Something went wrong</h2>
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
 
-            <div class="scene-text">
-                ${escapeHtml(error.message)}
-            </div>
-
-            <br>
-
-            <button
-                class="choice"
-                onclick="location.reload()">
-                Reload
-            </button>
-        </div>`;
-}
-
-
-function disableChoices() {
-
-    document
-        .querySelectorAll(".choice")
-        .forEach(button => {
-            button.disabled = true;
-            button.style.opacity = "0.5";
-        });
-}
-
-
-function escapeHtml(value) {
-
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-/* ============================================================
-   STARTUP
-   ============================================================ */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        // The app starts with no selected world.
-        // User can choose New World or Replay Worlds.
-
-    }
-);
-
-</script>
-
-</body>
-</html>
-```
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
