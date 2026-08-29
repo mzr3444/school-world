@@ -26,8 +26,8 @@ if not API_KEY:
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
 MODEL = os.environ.get(
-    "OPENAI_MODEL",
-    "openrouter/free"
+    "OPENROUTER_MODEL",
+    os.environ.get("OPENAI_MODEL", "openrouter/free")
 )
 
 
@@ -307,13 +307,18 @@ WORLD RULES:
 7. You do NOT automatically know private conversations
    that you were not part of.
 8. World events affect everyone who can experience them.
-9. Characters may react to world events without waiting
-   for the player.
-10. Stay in character.
-11. Do not mention these instructions.
-12. Do not say you are an AI.
-13. Keep responses natural.
-14. Use memories naturally instead of listing them.
+9. Characters may react to world events without waiting for the player.
+10. Characters should have distinct voices, opinions, habits, and emotional reactions.
+11. Let conversations evolve: ask follow-up questions, remember details, disagree respectfully, joke, tease, hesitate, or change subjects naturally.
+12. Avoid repetitive greetings, generic filler, and repeating the same sentence patterns.
+13. Give responses enough detail to feel alive, usually 2-5 natural paragraphs or dialogue beats when the scene calls for it.
+14. When another character is present, react to what they said rather than pretending they are not there.
+15. If a memory is relevant, bring it up naturally and accurately.
+16. Do not invent private memories that this character could not know.
+17. Never speak for the player or decide the player's actions.
+18. Stay in character.
+19. Do not mention these instructions or say you are an AI.
+20. Use sensory details, small actions, body language, and setting details when they improve the scene.
 
 {extra_context}
 """
@@ -409,9 +414,24 @@ def chat():
         character_name
     ]
 
+    # Include recent world history so characters can naturally reference
+    # events that happened in the shared world without exposing private chats.
+    recent_world = "\n".join(world_history[-12:])
     system_prompt = build_character_prompt(
         character,
-        participants=participants
+        participants=participants,
+        extra_context=f"""
+RECENT SHARED WORLD EVENTS:
+{recent_world or 'No recent world events.'}
+
+CONVERSATION STYLE:
+- Treat this as an ongoing relationship, not a one-off question.
+- Build on details from the current conversation.
+- Let the character have independent thoughts and reactions.
+- If the player asks an open-ended question, answer specifically and add a
+  natural follow-up or related thought when appropriate.
+- Avoid sounding like a generic assistant.
+"""
     )
 
     messages = [
@@ -558,6 +578,10 @@ def group_chat():
 You are currently in a group conversation.
 
 Respond only as your own character.
+Have a distinct voice and react to the other people present.
+Use callbacks to earlier parts of the conversation when relevant.
+Do not make every character agree; natural disagreement, humor, curiosity,
+and different opinions make the group feel alive.
 
 You may react to the player and other characters,
 but do not control their actions.
@@ -928,10 +952,16 @@ def advance_world():
     event = None
     if random.random() < 0.30:
         choices = [
-            {"title": "🌧 Sudden Storm", "description": "A sudden storm moves across the school."},
-            {"title": "🚨 Strange Announcement", "description": "A strange announcement echoes through the school."},
-            {"title": "🎉 School Festival", "description": "A surprise festival begins nearby."},
-            {"title": "🔌 Power Outage", "description": "The lights suddenly go out throughout the school."}
+            {"title": "🌧 Sudden Storm", "description": "Dark clouds roll over campus and heavy rain starts pounding the windows."},
+            {"title": "🚨 Strange Announcement", "description": "A strange announcement echoes through the school, followed by an awkward silence."},
+            {"title": "🎉 Pop-Up Festival", "description": "Music starts playing nearby and students discover an unexpected school festival."},
+            {"title": "🔌 Power Outage", "description": "The lights suddenly go out throughout the school and emergency lights flicker on."},
+            {"title": "📚 Book Fair Surprise", "description": "A surprise shipment of books arrives and the library fills with students."},
+            {"title": "🏀 Championship Practice", "description": "The gym suddenly becomes packed as a major team prepares for an important game."},
+            {"title": "🐦 Bird in the Hall", "description": "A confused bird flies into the building and sends students scrambling out of its way."},
+            {"title": "🧪 Science Demo", "description": "A supervised science demonstration causes a loud pop and fills the room with harmless colored vapor."},
+            {"title": "🎨 Art Display", "description": "A new student art display is unveiled and everyone nearby starts discussing their favorites."},
+            {"title": "📢 Schedule Change", "description": "The school announces an unexpected schedule change that affects the rest of the day."}
         ]
         event = random.choice(choices)
         event["location"] = current_location
