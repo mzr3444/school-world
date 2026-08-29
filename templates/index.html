@@ -1,0 +1,4068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Living World V7.2</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#0d0d0f;
+    color:#eee;
+    font-family:Arial,sans-serif;
+}
+
+button,input,textarea{
+    font-family:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+#home{
+    width:100%;
+    height:100%;
+    overflow-y:auto;
+    padding:35px;
+}
+
+.title{
+    font-size:30px;
+    font-weight:bold;
+}
+
+.subtitle{
+    color:#777;
+    margin:6px 0 30px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:15px;
+    max-width:1100px;
+}
+
+.card{
+    background:#18181b;
+    border:1px solid #29292e;
+    border-radius:15px;
+    padding:20px;
+    transition:.15s;
+}
+
+.card:hover{
+    background:#222226;
+    transform:translateY(-3px);
+}
+
+.avatar{
+    font-size:38px;
+}
+
+.name{
+    font-size:20px;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+.role{
+    color:#666;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.description{
+    color:#888;
+    font-size:14px;
+    line-height:1.4;
+    margin-top:10px;
+}
+
+.homeButtons{
+    display:flex;
+    gap:10px;
+    margin-top:25px;
+    flex-wrap:wrap;
+}
+
+.homeButton,
+.smallButton{
+    background:#18181b;
+    border:1px solid #303035;
+    color:#ccc;
+    padding:10px 14px;
+    border-radius:8px;
+}
+
+.homeButton:hover,
+.smallButton:hover{
+    background:#27272b;
+    color:white;
+}
+
+/* CHAT */
+
+#chat{
+    display:none;
+    width:100%;
+    height:100%;
+    position:relative;
+}
+
+#characterName{
+    position:fixed;
+    top:10px;
+    left:15px;
+    color:#777;
+    font-size:12px;
+    z-index:20;
+}
+
+#locationName{
+    position:fixed;
+    top:28px;
+    left:15px;
+    color:#444;
+    font-size:10px;
+    z-index:20;
+}
+
+#worldStatus{
+    position:fixed;
+    top:43px;
+    left:15px;
+    color:#555;
+    font-size:9px;
+    z-index:20;
+}
+
+.controls{
+    position:fixed;
+    top:10px;
+    right:12px;
+    display:flex;
+    gap:10px;
+    z-index:30;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+
+.control{
+    background:transparent;
+    border:0;
+    color:#666;
+    font-size:10px;
+}
+
+.control:hover{
+    color:white;
+}
+
+#messages{
+    position:absolute;
+    top:65px;
+    bottom:120px;
+    left:0;
+    right:0;
+    overflow-y:auto;
+    padding:25px 20px 60px;
+}
+
+.message{
+    max-width:850px;
+    margin:0 auto 22px;
+    line-height:1.65;
+    font-size:16px;
+    white-space:pre-wrap;
+}
+
+.user{
+    color:#777;
+    text-align:right;
+}
+
+.ai{
+    color:#eee;
+}
+
+.system{
+    text-align:center;
+    color:#555;
+    font-size:12px;
+    font-style:italic;
+}
+
+.typing{
+    color:#555;
+    font-style:italic;
+}
+
+/* INPUT */
+
+#inputArea{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    height:120px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:15px 25px;
+    background:linear-gradient(to top,#0d0d0f 75%,transparent);
+    z-index:20;
+}
+
+#input{
+    width:min(850px,100%);
+    height:70px;
+    resize:none;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:white;
+    font-size:17px;
+}
+
+#input::placeholder{
+    color:#4f4f53;
+}
+
+/* EVENT */
+
+#eventBar{
+    display:none;
+    position:fixed;
+    bottom:120px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(600px,90%);
+    background:#18181b;
+    border:1px solid #303035;
+    border-radius:12px;
+    padding:12px 15px;
+    z-index:25;
+}
+
+#eventTitle{
+    font-weight:bold;
+    font-size:13px;
+}
+
+#eventDescription{
+    color:#999;
+    font-size:12px;
+    margin-top:4px;
+}
+
+/* GROUP */
+
+#groupIndicator{
+    position:fixed;
+    bottom:105px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#444;
+    font-size:10px;
+    z-index:25;
+}
+
+/* PEOPLE PRESENT */
+
+#peoplePanel{
+    position:fixed;
+    left:15px;
+    bottom:125px;
+    color:#555;
+    font-size:10px;
+    z-index:20;
+    max-width:220px;
+}
+
+.personPresent{
+    margin-top:4px;
+}
+
+/* LOCATION */
+
+#locationMenu{
+    display:none;
+    position:fixed;
+    top:55px;
+    right:100px;
+    width:170px;
+    background:#18181b;
+    border:1px solid #303035;
+    border-radius:10px;
+    padding:7px;
+    z-index:60;
+}
+
+.locationItem{
+    width:100%;
+    text-align:left;
+    background:transparent;
+    border:0;
+    color:#999;
+    padding:9px;
+    border-radius:7px;
+}
+
+.locationItem:hover{
+    background:#27272b;
+    color:white;
+}
+
+/* MODALS */
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.82);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+}
+
+.panel{
+    width:min(450px,92%);
+    max-height:90vh;
+    overflow-y:auto;
+    background:#18181b;
+    border:1px solid #303035;
+    border-radius:15px;
+    padding:24px;
+}
+
+.panel h2{
+    margin-top:0;
+}
+
+.panel p{
+    color:#999;
+    line-height:1.5;
+}
+
+.panel input,
+.panel textarea{
+    width:100%;
+    background:#101012;
+    border:1px solid #303035;
+    border-radius:8px;
+    color:white;
+    padding:11px;
+    margin-bottom:12px;
+    outline:none;
+}
+
+.panel textarea{
+    height:100px;
+    resize:vertical;
+}
+
+.panelButtons{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+}
+
+.primary,
+.secondary,
+.danger{
+    border:0;
+    border-radius:8px;
+    padding:10px 15px;
+}
+
+.primary{
+    background:#333;
+    color:white;
+}
+
+.secondary{
+    background:#222;
+    color:#aaa;
+}
+
+.danger{
+    background:#3a2020;
+    color:#ffb0b0;
+}
+
+.groupList{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:18px;
+}
+
+.groupItem{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#111113;
+    border:1px solid #29292e;
+    border-radius:8px;
+    padding:10px;
+}
+
+.groupItem input{
+    width:auto;
+    margin:0;
+}
+
+/* ============================================================
+   NATURAL ARRIVALS PANEL
+============================================================ */
+
+#arrivalNotice{
+    position:fixed;
+    top:65px;
+    left:50%;
+    transform:translateX(-50%);
+    display:none;
+    background:#18181b;
+    border:1px solid #303035;
+    border-radius:10px;
+    padding:10px 15px;
+    color:#aaa;
+    font-size:12px;
+    z-index:40;
+}
+
+/* MOBILE */
+
+@media(max-width:650px){
+
+    #home{
+        padding:25px 15px;
+    }
+
+    #messages{
+        padding-left:14px;
+        padding-right:14px;
+    }
+
+    .controls{
+        max-width:72%;
+    }
+
+    #inputArea{
+        padding:15px;
+    }
+
+    #peoplePanel{
+        display:none;
+    }
+}
+
+/* ============================================================
+   CINEMATIC STORY MODE
+============================================================ */
+
+.storyHomeButton{
+    border-color:#4b4b55;
+}
+
+#storyMode{
+    display:none;
+    width:100%;
+    height:100%;
+    position:relative;
+    background:
+        radial-gradient(circle at 50% 15%, #1b1b22 0%, #0d0d0f 55%);
+}
+
+#storyHeader{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:70px;
+    padding:15px 22px;
+    border-bottom:1px solid #25252a;
+    background:rgba(13,13,15,.94);
+    z-index:20;
+}
+
+#storyTitle{
+    font-size:17px;
+    font-weight:bold;
+}
+
+#storyChapter{
+    color:#666;
+    font-size:11px;
+    margin-top:4px;
+}
+
+#storyExit{
+    position:absolute;
+    right:20px;
+    top:20px;
+}
+
+#storyContent{
+    position:absolute;
+    top:70px;
+    bottom:0;
+    left:0;
+    right:0;
+    overflow-y:auto;
+    padding:45px 20px 100px;
+}
+
+#storyScene{
+    width:min(900px,100%);
+    margin:0 auto;
+    color:#e8e8ea;
+    font-size:17px;
+    line-height:1.8;
+    white-space:pre-wrap;
+}
+
+.storyParagraph{
+    margin-bottom:24px;
+}
+
+#storyConsequences{
+    width:min(900px,100%);
+    margin:30px auto;
+    padding:15px 18px;
+    border:1px solid #303035;
+    border-radius:12px;
+    background:#151519;
+    color:#aaa;
+    font-size:13px;
+    line-height:1.6;
+}
+
+#storyChoices{
+    width:min(900px,100%);
+    margin:35px auto 0;
+    display:grid;
+    gap:12px;
+}
+
+.storyChoice{
+    width:100%;
+    text-align:left;
+    padding:18px;
+    background:#161619;
+    border:1px solid #303035;
+    border-radius:12px;
+    color:#eee;
+    transition:.15s;
+}
+
+.storyChoice:hover{
+    background:#222227;
+    border-color:#55555d;
+    transform:translateY(-1px);
+}
+
+.storyChoiceId{
+    color:#666;
+    font-size:11px;
+    margin-bottom:6px;
+}
+
+.storyChoiceText{
+    font-size:15px;
+    line-height:1.5;
+}
+
+.storyChoicePreview{
+    color:#777;
+    font-size:12px;
+    margin-top:7px;
+}
+
+#storyLoading{
+    width:min(900px,100%);
+    margin:35px auto;
+    color:#555;
+    font-style:italic;
+    text-align:center;
+}
+
+#storyEnding{
+    width:min(900px,100%);
+    margin:35px auto;
+    padding:22px;
+    border:1px solid #3a3a43;
+    border-radius:12px;
+    text-align:center;
+    color:#ddd;
+}
+
+.storyResetButton{
+    margin-top:14px;
+}
+
+@media(max-width:650px){
+    #storyContent{
+        padding:35px 15px 80px;
+    }
+
+    #storyScene{
+        font-size:16px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ============================================================
+     HOME
+============================================================ -->
+
+<div id="home">
+
+    <div class="title">
+        School World
+    </div>
+
+    <div class="subtitle">
+        A living world where characters can meet, talk,
+        leave, return, and experience events together.
+    </div>
+
+    <div
+        class="grid"
+        id="characterGrid">
+    </div>
+
+    <div class="homeButtons">
+
+        <button
+            class="homeButton"
+            onclick="openCreator()">
+            + CREATE CHARACTER
+        </button>
+
+        <button
+            class="homeButton storyHomeButton"
+            onclick="openStoryMode()">
+            🎬 STORY MODE
+        </button>
+
+        <button
+            class="homeButton"
+            onclick="openWorldReset()">
+            WORLD RESET
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     CHAT
+============================================================ -->
+
+<div id="chat">
+
+    <div id="characterName">
+        Luna
+    </div>
+
+    <div id="locationName">
+        Classroom
+    </div>
+
+    <div id="worldStatus">
+        ▶ WORLD ACTIVE
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            class="control"
+            onclick="openLocation()">
+            LOCATION
+        </button>
+
+        <button
+            class="control"
+            id="pauseButton"
+            onclick="togglePause()">
+            ⏸ PAUSE WORLD
+        </button>
+
+        <button
+            class="control"
+            onclick="openGroup()">
+            GROUP
+        </button>
+
+        <button
+            class="control"
+            onclick="newResponse()">
+            NEW TEXT
+        </button>
+
+        <button
+            class="control"
+            onclick="triggerEvent()">
+            EVENT
+        </button>
+
+        <button
+            class="control"
+            onclick="openConversationReset()">
+            RESET
+        </button>
+
+        <button
+            class="control"
+            onclick="exitChat()">
+            EXIT
+        </button>
+
+    </div>
+
+
+    <div id="locationMenu"></div>
+
+
+    <div id="arrivalNotice"></div>
+
+
+    <div id="eventBar">
+
+        <div id="eventTitle"></div>
+
+        <div id="eventDescription"></div>
+
+    </div>
+
+
+    <div id="peoplePanel"></div>
+
+
+    <div id="messages"></div>
+
+    <div id="groupIndicator"></div>
+
+
+    <div id="inputArea">
+
+        <textarea
+            id="input"
+            placeholder="Type something..."
+            autocomplete="off">
+        </textarea>
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================================================
+     CINEMATIC STORY MODE
+============================================================ -->
+<div id="storyMode">
+
+    <div id="storyHeader">
+        <div id="storyTitle">Story Mode</div>
+        <div id="storyChapter">Chapter 1</div>
+
+        <button
+            class="control"
+            id="storyExit"
+            onclick="exitStoryMode()">
+            EXIT STORY
+        </button>
+    </div>
+
+    <div id="storyContent">
+
+        <div id="storyScene"></div>
+
+        <div id="storyConsequences" style="display:none;"></div>
+
+        <div id="storyLoading">
+            Building your story...
+        </div>
+
+        <div id="storyChoices"></div>
+
+        <div id="storyEnding" style="display:none;">
+            <div style="font-size:18px;font-weight:bold;">
+                Story Complete
+            </div>
+
+            <div
+                id="storyEndingText"
+                style="margin-top:10px;color:#999;">
+            </div>
+
+            <button
+                class="primary storyResetButton"
+                onclick="startNewStory()">
+                START A NEW STORY
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     CHARACTER CREATOR
+============================================================ -->
+
+<div
+    class="modal"
+    id="creatorModal">
+
+    <div class="panel">
+
+        <h2>
+            Create Character
+        </h2>
+
+        <input
+            id="newName"
+            placeholder="Character name">
+
+        <input
+            id="newPersonality"
+            placeholder="Personality">
+
+        <textarea
+            id="newDescription"
+            placeholder="Character description">
+        </textarea>
+
+        <input
+            id="newRole"
+            placeholder="Role">
+
+        <div class="panelButtons">
+
+            <button
+                class="secondary"
+                onclick="closeCreator()">
+                Cancel
+            </button>
+
+            <button
+                class="primary"
+                onclick="createCharacter()">
+                Create
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     GROUP
+============================================================ -->
+
+<div
+    class="modal"
+    id="groupModal">
+
+    <div class="panel">
+
+        <h2>
+            Group Conversation
+        </h2>
+
+        <p>
+            Choose who is intentionally traveling with you.
+            Other characters can still naturally appear in the world.
+        </p>
+
+        <div
+            class="groupList"
+            id="groupList">
+        </div>
+
+        <div class="panelButtons">
+
+            <button
+                class="secondary"
+                onclick="closeGroup()">
+                Cancel
+            </button>
+
+            <button
+                class="primary"
+                onclick="saveGroup()">
+                Start Group
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     RESET CONVERSATION
+============================================================ -->
+
+<div
+    class="modal"
+    id="resetModal">
+
+    <div class="panel">
+
+        <h2>
+            Reset Conversation?
+        </h2>
+
+        <p>
+            This resets the conversation but keeps your
+            characters and world.
+        </p>
+
+        <div class="panelButtons">
+
+            <button
+                class="secondary"
+                onclick="closeConversationReset()">
+                Cancel
+            </button>
+
+            <button
+                class="primary"
+                onclick="resetConversation()">
+                Reset
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     WORLD RESET
+============================================================ -->
+
+<div
+    class="modal"
+    id="worldResetModal">
+
+    <div class="panel">
+
+        <h2>
+            Reset Entire World?
+        </h2>
+
+        <p>
+            This removes saved conversations, custom characters,
+            and world state from this browser.
+        </p>
+
+        <div class="panelButtons">
+
+            <button
+                class="secondary"
+                onclick="closeWorldReset()">
+                Cancel
+            </button>
+
+            <button
+                class="danger"
+                onclick="resetWorld()">
+                WORLD RESET
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   CHARACTERS
+============================================================ */
+
+const DEFAULT_CHARACTERS = {
+
+    Luna:{
+        name:"Luna",
+        personality:"shy, sweet, thoughtful, nervous, friendly",
+        description:"A shy student who slowly becomes comfortable around people.",
+        role:"Student",
+        avatar:"💗"
+    },
+
+    Jayden:{
+        name:"Jayden",
+        personality:"outgoing, funny, confident, energetic",
+        description:"An outgoing student who loves joking around.",
+        role:"Student",
+        avatar:"😎"
+    },
+
+    Mia:{
+        name:"Mia",
+        personality:"smart, calm, curious, kind",
+        description:"A smart student who enjoys interesting conversations.",
+        role:"Student",
+        avatar:"📚"
+    },
+
+    Darius:{
+        name:"Darius",
+        personality:"competitive, confident, energetic, funny",
+        description:"A basketball-loving student who enjoys competition.",
+        role:"Student",
+        avatar:"🏀"
+    }
+
+};
+
+
+const LOCATIONS = [
+    "Classroom",
+    "Hallway",
+    "Cafeteria",
+    "Library",
+    "Gym",
+    "School Courtyard"
+];
+
+
+/* ============================================================
+   STATE
+============================================================ */
+
+let characters = {};
+
+let currentCharacter = null;
+
+let conversation = [];
+
+let currentLocation = "Classroom";
+
+let activeCharacters = [];
+
+let worldPaused = false;
+
+let activeEvent = null;
+
+let naturalWorldTimer = null;
+
+let responseInProgress = false;
+
+
+/* ============================================================
+   LOAD CHARACTERS
+============================================================ */
+
+function loadCharacters(){
+
+    const saved =
+        localStorage.getItem(
+            "schoolWorldCharacters"
+        );
+
+    if(saved){
+
+        try{
+
+            characters =
+                JSON.parse(saved);
+
+        }catch{
+
+            characters =
+                {...DEFAULT_CHARACTERS};
+
+        }
+
+    }else{
+
+        characters =
+            {...DEFAULT_CHARACTERS};
+
+    }
+
+    renderCharacters();
+
+}
+
+
+/* ============================================================
+   SAVE CHARACTERS
+============================================================ */
+
+function saveCharacters(){
+
+    localStorage.setItem(
+        "schoolWorldCharacters",
+        JSON.stringify(characters)
+    );
+
+}
+
+
+/* ============================================================
+   RENDER HOME
+============================================================ */
+
+function renderCharacters(){
+
+    const grid =
+        document.getElementById(
+            "characterGrid"
+        );
+
+    grid.innerHTML = "";
+
+
+    Object.values(characters).forEach(
+        character => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "card";
+
+            card.onclick =
+                () =>
+                    startChat(
+                        character.name
+                    );
+
+
+            const avatar =
+                document.createElement(
+                    "div"
+                );
+
+            avatar.className =
+                "avatar";
+
+            avatar.textContent =
+                character.avatar ||
+                "👤";
+
+
+            const name =
+                document.createElement(
+                    "div"
+                );
+
+            name.className =
+                "name";
+
+            name.textContent =
+                character.name;
+
+
+            const role =
+                document.createElement(
+                    "div"
+                );
+
+            role.className =
+                "role";
+
+            role.textContent =
+                character.role ||
+                "Student";
+
+
+            const description =
+                document.createElement(
+                    "div"
+                );
+
+            description.className =
+                "description";
+
+            description.textContent =
+                character.description;
+
+
+            card.appendChild(avatar);
+            card.appendChild(name);
+            card.appendChild(role);
+            card.appendChild(description);
+
+            grid.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   STORAGE
+============================================================ */
+
+function conversationKey(){
+
+    return "schoolConversation_" +
+        currentCharacter;
+
+}
+
+
+function saveConversation(){
+
+    if(!currentCharacter)
+        return;
+
+    localStorage.setItem(
+        conversationKey(),
+        JSON.stringify(conversation)
+    );
+
+}
+
+
+function loadConversation(){
+
+    const saved =
+        localStorage.getItem(
+            conversationKey()
+        );
+
+
+    if(!saved){
+
+        conversation = [];
+
+        return false;
+
+    }
+
+
+    try{
+
+        conversation =
+            JSON.parse(saved);
+
+        return conversation.length > 0;
+
+    }catch{
+
+        conversation = [];
+
+        return false;
+
+    }
+
+}
+
+
+/* ============================================================
+   SHARED CHARACTER MEMORY
+============================================================ */
+
+const SHARED_MEMORY_KEY =
+    "schoolSharedCharacterMemory";
+
+function loadSharedMemory(){
+
+    const saved =
+        localStorage.getItem(
+            SHARED_MEMORY_KEY
+        );
+
+    if(!saved)
+        return {};
+
+    try{
+        const data = JSON.parse(saved);
+        return data && typeof data === "object"
+            ? data
+            : {};
+    }catch{
+        return {};
+    }
+}
+
+function saveSharedMemory(memory){
+
+    localStorage.setItem(
+        SHARED_MEMORY_KEY,
+        JSON.stringify(memory)
+    );
+}
+
+function addSharedMemory(participants, text){
+
+    if(!Array.isArray(participants) || !text)
+        return;
+
+    const memory = loadSharedMemory();
+
+    participants.forEach(name => {
+
+        if(!name) return;
+
+        if(!Array.isArray(memory[name])){
+            memory[name] = [];
+        }
+
+        if(!memory[name].includes(text)){
+            memory[name].push(text);
+        }
+
+        // Keep browser storage from growing forever.
+        memory[name] = memory[name].slice(-30);
+    });
+
+    saveSharedMemory(memory);
+}
+
+function getSharedMemory(){
+    return loadSharedMemory();
+}
+
+function clearSharedMemory(){
+    localStorage.removeItem(
+        SHARED_MEMORY_KEY
+    );
+}
+
+function extractMemoryFromUserMessage(text){
+
+    if(!text) return null;
+
+    const patterns = [
+        /\b(?:my|i) favorite book is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favourite book is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite movie is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite game is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite song is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite food is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite color is (.+?)(?:[.!?]|$)/i,
+        /\b(?:my|i) favorite (.+?) is (.+?)(?:[.!?]|$)/i
+    ];
+
+    for(const pattern of patterns){
+        const match = text.match(pattern);
+        if(match){
+            if(match.length === 2){
+                return `The user's favorite book is ${match[1].trim()}.`;
+            }
+
+            const subject = match[1].trim();
+            const value = match[2].trim();
+
+            if(subject.toLowerCase() === "book")
+                return `The user's favorite book is ${value}.`;
+
+            if(subject.toLowerCase() === "movie")
+                return `The user's favorite movie is ${value}.`;
+
+            if(subject.toLowerCase() === "game")
+                return `The user's favorite game is ${value}.`;
+
+            if(subject.toLowerCase() === "song")
+                return `The user's favorite song is ${value}.`;
+
+            if(subject.toLowerCase() === "food")
+                return `The user's favorite food is ${value}.`;
+
+            if(subject.toLowerCase() === "color")
+                return `The user's favorite color is ${value}.`;
+
+            return `The user's favorite ${subject} is ${value}.`;
+        }
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   WORLD STORAGE
+============================================================ */
+
+function saveWorldState(){
+
+    localStorage.setItem(
+        "schoolWorldSettings",
+        JSON.stringify({
+
+            location:
+                currentLocation,
+
+            paused:
+                worldPaused,
+
+            activeCharacters:
+                activeCharacters,
+
+            activeEvent:
+                activeEvent
+
+        })
+    );
+
+}
+
+
+function loadWorldState(){
+
+    const saved =
+        localStorage.getItem(
+            "schoolWorldSettings"
+        );
+
+
+    if(!saved){
+
+        currentLocation =
+            "Classroom";
+
+        worldPaused =
+            false;
+
+        activeCharacters =
+            [currentCharacter];
+
+        activeEvent =
+            null;
+
+        return;
+
+    }
+
+
+    try{
+
+        const data =
+            JSON.parse(saved);
+
+
+        currentLocation =
+            data.location ||
+            "Classroom";
+
+
+        worldPaused =
+            Boolean(
+                data.paused
+            );
+
+
+        activeCharacters =
+            Array.isArray(
+                data.activeCharacters
+            )
+                ? data.activeCharacters
+                : [];
+
+
+        activeEvent =
+            data.activeEvent ||
+            null;
+
+
+    }catch{
+
+        currentLocation =
+            "Classroom";
+
+        worldPaused =
+            false;
+
+        activeCharacters =
+            [];
+
+        activeEvent =
+            null;
+
+    }
+
+
+    if(
+        !activeCharacters.includes(
+            currentCharacter
+        )
+    ){
+
+        activeCharacters.unshift(
+            currentCharacter
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   START CHAT
+============================================================ */
+
+function startChat(name){
+
+    currentCharacter =
+        name;
+
+
+    loadWorldState();
+
+
+    if(
+        !activeCharacters.includes(
+            name
+        )
+    ){
+
+        activeCharacters.unshift(
+            name
+        );
+
+    }
+
+
+    document.getElementById(
+        "home"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "chat"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "characterName"
+    ).textContent =
+        name;
+
+
+    updateWorldUI();
+
+
+    document.getElementById(
+        "messages"
+    ).innerHTML =
+        "";
+
+
+    if(loadConversation()){
+
+        renderConversation();
+
+    }else{
+
+        const greeting =
+            getGreeting(name);
+
+
+        addMessage(
+            greeting,
+            "ai"
+        );
+
+
+        conversation.push({
+
+            role:"assistant",
+
+            content:greeting
+
+        });
+
+
+        saveConversation();
+
+    }
+
+
+    updateGroupIndicator();
+
+    updatePeoplePanel();
+
+    updateEventUI();
+
+    startNaturalWorld();
+
+    document.getElementById(
+        "input"
+    ).focus();
+
+}
+
+
+/* ============================================================
+   GREETINGS
+============================================================ */
+
+function getGreeting(name){
+
+    if(name === "Luna"){
+
+        return "*Luna looks up from her desk and gives you a small smile.*\n\nLuna: Um... hi. I don't think we've met before.";
+
+    }
+
+
+    if(name === "Jayden"){
+
+        return "Jayden: Yo! What's up? You new around here?";
+
+    }
+
+
+    if(name === "Mia"){
+
+        return "Mia: Hey. I'm Mia. I don't think we've talked before.";
+
+    }
+
+
+    if(name === "Darius"){
+
+        return "Darius: What's up? I'm Darius. You new around here?";
+
+    }
+
+
+    return `*${name} notices you.*\n\n${name}: Hey. I don't think we've met before.`;
+
+}
+
+
+/* ============================================================
+   MESSAGES
+============================================================ */
+
+function renderConversation(){
+
+    const box =
+        document.getElementById(
+            "messages"
+        );
+
+    box.innerHTML = "";
+
+
+    conversation.forEach(
+        message => {
+
+            if(
+                message.role ===
+                "user"
+            ){
+
+                addMessage(
+                    message.content,
+                    "user"
+                );
+
+            }
+
+
+            if(
+                message.role ===
+                "assistant"
+            ){
+
+                addMessage(
+                    message.content,
+                    "ai"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+function addMessage(
+    text,
+    type
+){
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.className =
+        "message " +
+        type;
+
+    div.textContent =
+        text;
+
+
+    document.getElementById(
+        "messages"
+    ).appendChild(div);
+
+
+    scrollBottom();
+
+}
+
+
+function addSystemMessage(
+    text
+){
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.className =
+        "message system";
+
+    div.textContent =
+        text;
+
+
+    document.getElementById(
+        "messages"
+    ).appendChild(div);
+
+
+    scrollBottom();
+
+}
+
+
+function scrollBottom(){
+
+    const box =
+        document.getElementById(
+            "messages"
+        );
+
+    box.scrollTop =
+        box.scrollHeight;
+
+}
+
+
+/* ============================================================
+   SEND MESSAGE
+============================================================ */
+
+async function sendMessage(){
+
+    if(responseInProgress)
+        return;
+
+
+    const input =
+        document.getElementById(
+            "input"
+        );
+
+
+    const text =
+        input.value.trim();
+
+
+    if(
+        !text ||
+        !currentCharacter
+    )
+        return;
+
+
+    responseInProgress =
+        true;
+
+
+    addMessage(
+        text,
+        "user"
+    );
+
+
+    conversation.push({
+
+        role:"user",
+
+        content:text
+
+    });
+
+    // Everyone currently included in the conversation
+    // receives the same memory, so it follows them into
+    // their future one-on-one conversations.
+    const memoryFact =
+        extractMemoryFromUserMessage(text);
+
+    if(memoryFact){
+        addSharedMemory(
+            activeCharacters,
+            memoryFact
+        );
+    }
+
+    saveConversation();
+
+    input.value = "";
+
+
+    const typing =
+        document.createElement(
+            "div"
+        );
+
+    typing.className =
+        "message ai typing";
+
+    typing.textContent =
+        "thinking...";
+
+
+    document.getElementById(
+        "messages"
+    ).appendChild(typing);
+
+
+    scrollBottom();
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/chat",
+                {
+
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+
+                        character:
+                            currentCharacter,
+
+                        location:
+                            currentLocation,
+
+                        messages:
+                            conversation,
+
+                        worldCharacters:
+                            characters,
+
+                        activeCharacters:
+                            activeCharacters,
+
+                        characterMemory:
+                            getSharedMemory()
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        typing.remove();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Server error"
+            );
+
+        }
+
+
+        const answer =
+            data.response ||
+            "Nobody responds.";
+
+
+        addMessage(
+            answer,
+            "ai"
+        );
+
+
+        conversation.push({
+
+            role:"assistant",
+
+            content:answer
+
+        });
+
+
+        saveConversation();
+
+
+        if(data.event){
+
+            activeEvent =
+                data.event;
+
+            updateEventUI();
+
+        }
+
+
+        updatePeoplePanel();
+
+
+    }catch(error){
+
+        typing.remove();
+
+
+        addMessage(
+            "I couldn't connect to the AI right now.",
+            "ai"
+        );
+
+
+        console.error(error);
+
+    }
+
+
+    responseInProgress =
+        false;
+
+}
+
+
+/* ============================================================
+   NEW TEXT
+============================================================ */
+
+async function newResponse(){
+
+    if(
+        responseInProgress ||
+        !conversation.length
+    )
+        return;
+
+
+    let lastUser =
+        -1;
+
+
+    for(
+        let i =
+            conversation.length - 1;
+        i >= 0;
+        i--
+    ){
+
+        if(
+            conversation[i].role ===
+            "user"
+        ){
+
+            lastUser =
+                i;
+
+            break;
+
+        }
+
+    }
+
+
+    if(lastUser === -1)
+        return;
+
+
+    conversation =
+        conversation.slice(
+            0,
+            lastUser + 1
+        );
+
+
+    renderConversation();
+
+
+    await regenerate();
+
+}
+
+
+async function regenerate(){
+
+    responseInProgress =
+        true;
+
+
+    const typing =
+        document.createElement(
+            "div"
+        );
+
+    typing.className =
+        "message ai typing";
+
+    typing.textContent =
+        "thinking of another response...";
+
+
+    document.getElementById(
+        "messages"
+    ).appendChild(typing);
+
+
+    scrollBottom();
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/chat",
+                {
+
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:JSON.stringify({
+
+                        character:
+                            currentCharacter,
+
+                        location:
+                            currentLocation,
+
+                        messages:
+                            conversation,
+
+                        worldCharacters:
+                            characters,
+
+                        activeCharacters:
+                            activeCharacters
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        typing.remove();
+
+
+        if(!response.ok)
+            throw new Error(
+                data.error
+            );
+
+
+        const answer =
+            data.response ||
+            "Nobody responds.";
+
+
+        addMessage(
+            answer,
+            "ai"
+        );
+
+
+        conversation.push({
+
+            role:"assistant",
+
+            content:answer
+
+        });
+
+
+        saveConversation();
+
+
+    }catch(error){
+
+        typing.remove();
+
+        addMessage(
+            "I couldn't generate another response.",
+            "ai"
+        );
+
+    }
+
+
+    responseInProgress =
+        false;
+
+}
+
+
+/* ============================================================
+   GROUP
+============================================================ */
+
+function openGroup(){
+
+    const modal =
+        document.getElementById(
+            "groupModal"
+        );
+
+
+    const list =
+        document.getElementById(
+            "groupList"
+        );
+
+
+    list.innerHTML = "";
+
+
+    Object.values(characters)
+        .forEach(
+            character => {
+
+                const label =
+                    document.createElement(
+                        "label"
+                    );
+
+                label.className =
+                    "groupItem";
+
+
+                const checkbox =
+                    document.createElement(
+                        "input"
+                    );
+
+                checkbox.type =
+                    "checkbox";
+
+                checkbox.value =
+                    character.name;
+
+                checkbox.checked =
+                    activeCharacters.includes(
+                        character.name
+                    );
+
+
+                const span =
+                    document.createElement(
+                        "span"
+                    );
+
+                span.textContent =
+                    character.name;
+
+
+                label.appendChild(
+                    checkbox
+                );
+
+                label.appendChild(
+                    span
+                );
+
+
+                list.appendChild(
+                    label
+                );
+
+            }
+        );
+
+
+    modal.style.display =
+        "flex";
+
+}
+
+
+function closeGroup(){
+
+    document.getElementById(
+        "groupModal"
+    ).style.display =
+        "none";
+
+}
+
+
+function saveGroup(){
+
+    const boxes =
+        document.querySelectorAll(
+            "#groupList input"
+        );
+
+
+    const selected = [];
+
+
+    boxes.forEach(
+        box => {
+
+            if(box.checked){
+
+                selected.push(
+                    box.value
+                );
+
+            }
+
+        }
+    );
+
+
+    if(
+        !selected.includes(
+            currentCharacter
+        )
+    ){
+
+        selected.unshift(
+            currentCharacter
+        );
+
+    }
+
+
+    activeCharacters =
+        selected;
+
+
+    saveWorldState();
+
+    updateGroupIndicator();
+
+    updatePeoplePanel();
+
+    closeGroup();
+
+
+    addSystemMessage(
+        "The group changes."
+    );
+
+}
+
+
+function updateGroupIndicator(){
+
+    const indicator =
+        document.getElementById(
+            "groupIndicator"
+        );
+
+
+    if(
+        activeCharacters.length <=
+        1
+    ){
+
+        indicator.textContent =
+            "";
+
+        return;
+
+    }
+
+
+    indicator.textContent =
+        "GROUP: " +
+        activeCharacters.join(
+            " • "
+        );
+
+}
+
+
+/* ============================================================
+   PEOPLE PRESENT
+============================================================ */
+
+function updatePeoplePanel(){
+
+    const panel =
+        document.getElementById(
+            "peoplePanel"
+        );
+
+
+    panel.innerHTML = "";
+
+
+    activeCharacters.forEach(
+        name => {
+
+            const person =
+                document.createElement(
+                    "div"
+                );
+
+            person.className =
+                "personPresent";
+
+            person.textContent =
+                "● " + name;
+
+            panel.appendChild(
+                person
+            );
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   LOCATION
+============================================================ */
+
+function openLocation(){
+
+    const menu =
+        document.getElementById(
+            "locationMenu"
+        );
+
+
+    menu.innerHTML = "";
+
+
+    LOCATIONS.forEach(
+        location => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.className =
+                "locationItem";
+
+            button.textContent =
+                location;
+
+            button.onclick =
+                () =>
+                    changeLocation(
+                        location
+                    );
+
+
+            menu.appendChild(
+                button
+            );
+
+        }
+    );
+
+
+    menu.style.display =
+        "block";
+
+}
+
+
+async function changeLocation(
+    location
+){
+
+    if(
+        worldPaused
+    ){
+
+        addSystemMessage(
+            "The world is paused. Unpause it before traveling."
+        );
+
+        return;
+
+    }
+
+    if(
+        location === currentLocation
+    ){
+
+        document.getElementById(
+            "locationMenu"
+        ).style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    const previousLocation =
+        currentLocation;
+
+
+    document.getElementById(
+        "locationMenu"
+    ).style.display =
+        "none";
+
+
+    addSystemMessage(
+        `🚶 Traveling from the ${previousLocation} to the ${location}...`
+    );
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/world/travel",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        from:previousLocation,
+                        destination:location,
+                        participants:activeCharacters,
+                        messages:conversation,
+                        worldCharacters:characters,
+                        characterMemory:getSharedMemory()
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Travel failed."
+            );
+
+        }
+
+
+        if(data.story){
+
+            addSystemMessage(
+                data.story
+            );
+
+        }
+
+
+        currentLocation =
+            data.location ||
+            location;
+
+
+        saveWorldState();
+
+        updateWorldUI();
+
+
+        /*
+           Characters deliberately traveling with the user
+           remain part of the group. Other characters can
+           naturally appear after the arrival.
+        */
+
+        naturalArrival(
+            true
+        );
+
+        saveConversation();
+
+
+    }catch(error){
+
+        console.error(
+            "Travel error:",
+            error
+        );
+
+        /*
+           Keep the old behavior as a safe fallback if the
+           travel endpoint is temporarily unavailable.
+        */
+
+        currentLocation =
+            location;
+
+        saveWorldState();
+        updateWorldUI();
+
+        addSystemMessage(
+            `You arrive at the ${location}.`
+        );
+
+        naturalArrival(
+            true
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   NATURAL WORLD
+============================================================ */
+
+function startNaturalWorld(){
+
+    stopNaturalWorld();
+
+
+    naturalWorldTimer =
+        setInterval(
+            () => {
+
+                if(
+                    !worldPaused &&
+                    !responseInProgress
+                ){
+
+                    naturalWorldTick();
+
+                }
+
+            },
+
+            18000
+        );
+
+}
+
+
+function stopNaturalWorld(){
+
+    if(naturalWorldTimer){
+
+        clearInterval(
+            naturalWorldTimer
+        );
+
+        naturalWorldTimer =
+            null;
+
+    }
+
+}
+
+
+async function naturalWorldTick(){
+
+    if(worldPaused)
+        return;
+
+
+    /*
+       First let the backend advance the world.
+    */
+
+    try{
+
+        const response =
+            await fetch(
+                "/world/advance",
+                {
+                    method:"POST"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if(data.event){
+
+            activeEvent =
+                data.event;
+
+            updateEventUI();
+
+
+            addSystemMessage(
+                `🌎 ${data.event.title}: ${data.event.description}`
+            );
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "World tick:",
+            error
+        );
+
+    }
+
+
+    /*
+       Then possibly bring another character
+       into the user's current location.
+    */
+
+    naturalArrival(
+        false
+    );
+
+
+    /*
+       Occasionally a character leaves.
+    */
+
+    naturalDeparture();
+
+}
+
+
+function naturalArrival(
+    forced
+){
+
+    if(worldPaused)
+        return;
+
+
+    const possible =
+        Object.keys(
+            characters
+        ).filter(
+            name =>
+                !activeCharacters.includes(
+                    name
+                )
+        );
+
+
+    if(
+        possible.length === 0
+    )
+        return;
+
+
+    /*
+       Normal world:
+       30% chance.
+
+       After changing location:
+       65% chance.
+    */
+
+    const chance =
+        forced
+            ? .65
+            : .30;
+
+
+    if(
+        Math.random() >
+        chance
+    )
+        return;
+
+
+    const name =
+        possible[
+            Math.floor(
+                Math.random() *
+                possible.length
+            )
+        ];
+
+
+    activeCharacters.push(
+        name
+    );
+
+
+    saveWorldState();
+
+    updateGroupIndicator();
+
+    updatePeoplePanel();
+
+
+    showArrival(
+        `${name} arrives at the ${currentLocation}.`
+    );
+
+
+    /*
+       The AI gets an actual world message so
+       the arrival can become part of the story.
+    */
+
+    addSystemMessage(
+        `👤 ${name} arrives at the ${currentLocation}.`
+    );
+
+}
+
+
+function naturalDeparture(){
+
+    if(
+        activeCharacters.length <= 1
+    )
+        return;
+
+
+    /*
+       Don't remove the character the user
+       deliberately started the conversation with.
+    */
+
+    const candidates =
+        activeCharacters.filter(
+            name =>
+                name !== currentCharacter
+        );
+
+
+    if(
+        candidates.length === 0
+    )
+        return;
+
+
+    /*
+       Small chance of someone leaving.
+    */
+
+    if(
+        Math.random() > .12
+    )
+        return;
+
+
+    const name =
+        candidates[
+            Math.floor(
+                Math.random() *
+                candidates.length
+            )
+        ];
+
+
+    /*
+       Characters selected as part of a group
+       are allowed to stay unless the world
+       naturally pulls them away.
+    */
+
+    activeCharacters =
+        activeCharacters.filter(
+            item =>
+                item !== name
+        );
+
+
+    saveWorldState();
+
+    updateGroupIndicator();
+
+    updatePeoplePanel();
+
+
+    addSystemMessage(
+        `${name} leaves the ${currentLocation}.`
+    );
+
+}
+
+
+function showArrival(
+    text
+){
+
+    const notice =
+        document.getElementById(
+            "arrivalNotice"
+        );
+
+
+    notice.textContent =
+        text;
+
+
+    notice.style.display =
+        "block";
+
+
+    setTimeout(
+        () => {
+
+            notice.style.display =
+                "none";
+
+        },
+        3500
+    );
+
+}
+
+
+/* ============================================================
+   EVENTS
+============================================================ */
+
+async function triggerEvent(){
+
+    if(worldPaused){
+
+        addSystemMessage(
+            "The world is paused. Unpause it before creating an event."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        const response =
+            await fetch(
+                "/world/event",
+                {
+                    method:"POST"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if(data.event){
+
+            activeEvent =
+                data.event;
+
+
+            updateEventUI();
+
+
+            addSystemMessage(
+                `🌎 ${data.event.title}: ${data.event.description}`
+            );
+
+        }else{
+
+            addSystemMessage(
+                data.message ||
+                "Nothing happens."
+            );
+
+        }
+
+    }catch(error){
+
+        console.error(error);
+
+        addSystemMessage(
+            "The event system couldn't connect."
+        );
+
+    }
+
+}
+
+
+function updateEventUI(){
+
+    const bar =
+        document.getElementById(
+            "eventBar"
+        );
+
+
+    if(!activeEvent){
+
+        bar.style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "eventTitle"
+    ).textContent =
+        "🌎 " +
+        activeEvent.title;
+
+
+    document.getElementById(
+        "eventDescription"
+    ).textContent =
+        activeEvent.description;
+
+
+    bar.style.display =
+        "block";
+
+}
+
+
+/* ============================================================
+   PAUSE
+============================================================ */
+
+async function togglePause(){
+
+    worldPaused =
+        !worldPaused;
+
+
+    updateWorldUI();
+
+    saveWorldState();
+
+
+    try{
+
+        await fetch(
+            "/world",
+            {
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:JSON.stringify({
+
+                    paused:
+                        worldPaused
+
+                })
+
+            }
+        );
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+
+    if(worldPaused){
+
+        addSystemMessage(
+            "⏸ The world is paused. Characters and events will wait."
+        );
+
+    }else{
+
+        addSystemMessage(
+            "▶ The world is active again."
+        );
+
+        naturalWorldTick();
+
+    }
+
+}
+
+
+function updateWorldUI(){
+
+    document.getElementById(
+        "locationName"
+    ).textContent =
+        currentLocation;
+
+
+    document.getElementById(
+        "worldStatus"
+    ).textContent =
+        worldPaused
+            ? "⏸ WORLD PAUSED"
+            : "▶ WORLD ACTIVE";
+
+
+    document.getElementById(
+        "pauseButton"
+    ).textContent =
+        worldPaused
+            ? "▶ UNPAUSE WORLD"
+            : "⏸ PAUSE WORLD";
+
+}
+
+
+/* ============================================================
+   CONVERSATION RESET
+============================================================ */
+
+function openConversationReset(){
+
+    document.getElementById(
+        "resetModal"
+    ).style.display =
+        "flex";
+
+}
+
+
+function closeConversationReset(){
+
+    document.getElementById(
+        "resetModal"
+    ).style.display =
+        "none";
+
+}
+
+
+function resetConversation(){
+
+    localStorage.removeItem(
+        conversationKey()
+    );
+
+
+    conversation =
+        [];
+
+
+    activeCharacters =
+        [currentCharacter];
+
+
+    document.getElementById(
+        "messages"
+    ).innerHTML =
+        "";
+
+
+    closeConversationReset();
+
+
+    const greeting =
+        getGreeting(
+            currentCharacter
+        );
+
+
+    addMessage(
+        greeting,
+        "ai"
+    );
+
+
+    conversation.push({
+
+        role:"assistant",
+
+        content:greeting
+
+    });
+
+
+    saveConversation();
+
+    saveWorldState();
+
+    updateGroupIndicator();
+
+    updatePeoplePanel();
+
+}
+
+
+/* ============================================================
+   CHARACTER CREATOR
+============================================================ */
+
+function openCreator(){
+
+    document.getElementById(
+        "creatorModal"
+    ).style.display =
+        "flex";
+
+}
+
+
+function closeCreator(){
+
+    document.getElementById(
+        "creatorModal"
+    ).style.display =
+        "none";
+
+}
+
+
+function createCharacter(){
+
+    const name =
+        document.getElementById(
+            "newName"
+        ).value.trim();
+
+
+    const personality =
+        document.getElementById(
+            "newPersonality"
+        ).value.trim();
+
+
+    const description =
+        document.getElementById(
+            "newDescription"
+        ).value.trim();
+
+
+    const role =
+        document.getElementById(
+            "newRole"
+        ).value.trim();
+
+
+    if(!name){
+
+        alert(
+            "Please enter a character name."
+        );
+
+        return;
+
+    }
+
+
+    if(characters[name]){
+
+        alert(
+            "That character already exists."
+        );
+
+        return;
+
+    }
+
+
+    characters[name] = {
+
+        name:name,
+
+        personality:
+            personality ||
+            "friendly and interesting",
+
+        description:
+            description ||
+            "A student at the school.",
+
+        role:
+            role ||
+            "Student",
+
+        avatar:"👤"
+
+    };
+
+
+    saveCharacters();
+
+    renderCharacters();
+
+
+    document.getElementById(
+        "newName"
+    ).value = "";
+
+
+    document.getElementById(
+        "newPersonality"
+    ).value = "";
+
+
+    document.getElementById(
+        "newDescription"
+    ).value = "";
+
+
+    document.getElementById(
+        "newRole"
+    ).value = "";
+
+
+    closeCreator();
+
+}
+
+
+/* ============================================================
+   WORLD RESET
+============================================================ */
+
+function openWorldReset(){
+
+    document.getElementById(
+        "worldResetModal"
+    ).style.display =
+        "flex";
+
+}
+
+
+function closeWorldReset(){
+
+    document.getElementById(
+        "worldResetModal"
+    ).style.display =
+        "none";
+
+}
+
+
+async function resetWorld(){
+
+    clearSharedMemory();
+
+    localStorage.removeItem(
+        STORY_STORAGE_KEY
+    );
+
+    for(
+        let i =
+            localStorage.length - 1;
+        i >= 0;
+        i--
+    ){
+
+        const key =
+            localStorage.key(i);
+
+
+        if(
+            key &&
+            (
+                key.startsWith(
+                    "schoolConversation_"
+                ) ||
+                key ===
+                    "schoolWorldCharacters" ||
+                key ===
+                    "schoolWorldSettings"
+            )
+        ){
+
+            localStorage.removeItem(
+                key
+            );
+
+        }
+
+    }
+
+
+    try{
+
+        await fetch(
+            "/world/reset",
+            {
+                method:"POST"
+            }
+        );
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+
+    characters =
+        {...DEFAULT_CHARACTERS};
+
+
+    currentCharacter =
+        null;
+
+
+    conversation =
+        [];
+
+
+    currentLocation =
+        "Classroom";
+
+
+    worldPaused =
+        false;
+
+
+    activeCharacters =
+        [];
+
+
+    activeEvent =
+        null;
+
+
+    stopNaturalWorld();
+
+
+    closeWorldReset();
+
+
+    renderCharacters();
+
+
+    document.getElementById(
+        "chat"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "home"
+    ).style.display =
+        "block";
+
+
+    alert(
+        "The world has been reset."
+    );
+
+}
+
+
+/* ============================================================
+   EXIT
+============================================================ */
+
+function exitChat(){
+
+    saveConversation();
+
+    saveWorldState();
+
+    stopNaturalWorld();
+
+
+    document.getElementById(
+        "chat"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "home"
+    ).style.display =
+        "block";
+
+
+    currentCharacter =
+        null;
+
+
+    conversation =
+        [];
+
+}
+
+
+/* ============================================================
+   ENTER TO SEND
+============================================================ */
+
+document.getElementById(
+    "input"
+).addEventListener(
+    "keydown",
+    event => {
+
+        if(
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
+
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+/* ============================================================
+   CLOSE LOCATION MENU
+============================================================ */
+
+document.addEventListener(
+    "click",
+    event => {
+
+        if(
+            !event.target.closest(
+                "#locationMenu"
+            ) &&
+            !event.target.closest(
+                ".control"
+            )
+        ){
+
+            document.getElementById(
+                "locationMenu"
+            ).style.display =
+                "none";
+
+        }
+
+    }
+);
+
+
+/* ============================================================
+   SAVE BEFORE LEAVING
+============================================================ */
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        saveConversation();
+
+        saveWorldState();
+
+    }
+);
+
+
+/* ============================================================
+   START APP
+============================================================ */
+
+loadCharacters();
+
+
+/* ============================================================
+   CINEMATIC STORY MODE
+============================================================ */
+
+const STORY_STORAGE_KEY =
+    "schoolWorldCinematicStory";
+
+let storyState = null;
+
+
+function loadStoryState(){
+
+    const saved =
+        localStorage.getItem(
+            STORY_STORAGE_KEY
+        );
+
+    if(!saved)
+        return null;
+
+    try{
+        return JSON.parse(saved);
+    }catch{
+        return null;
+    }
+}
+
+
+function saveStoryState(){
+
+    if(!storyState)
+        return;
+
+    localStorage.setItem(
+        STORY_STORAGE_KEY,
+        JSON.stringify(storyState)
+    );
+
+}
+
+
+function clearStoryState(){
+
+    localStorage.removeItem(
+        STORY_STORAGE_KEY
+    );
+
+    storyState = null;
+
+}
+
+
+function openStoryMode(){
+
+    document.getElementById(
+        "home"
+    ).style.display = "none";
+
+    document.getElementById(
+        "chat"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyMode"
+    ).style.display = "block";
+
+    storyState =
+        loadStoryState();
+
+    if(
+        storyState &&
+        storyState.scene
+    ){
+
+        renderStory();
+
+    }else{
+
+        startNewStory();
+
+    }
+
+}
+
+
+function exitStoryMode(){
+
+    saveStoryState();
+
+    document.getElementById(
+        "storyMode"
+    ).style.display = "none";
+
+    document.getElementById(
+        "home"
+    ).style.display = "block";
+
+}
+
+
+function renderStory(){
+
+    if(!storyState)
+        return;
+
+    document.getElementById(
+        "storyTitle"
+    ).textContent =
+        storyState.title ||
+        "Story Mode";
+
+    document.getElementById(
+        "storyChapter"
+    ).textContent =
+        "Chapter " +
+        (storyState.chapter || 1);
+
+    const scene =
+        document.getElementById(
+            "storyScene"
+        );
+
+    scene.textContent =
+        storyState.scene || "";
+
+    const consequence =
+        document.getElementById(
+            "storyConsequences"
+        );
+
+    if(storyState.consequences){
+
+        consequence.textContent =
+            "CONSEQUENCE: " +
+            storyState.consequences;
+
+        consequence.style.display =
+            "block";
+
+    }else{
+
+        consequence.style.display =
+            "none";
+
+    }
+
+    const choices =
+        document.getElementById(
+            "storyChoices"
+        );
+
+    choices.innerHTML = "";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display = "none";
+
+    const ending =
+        document.getElementById(
+            "storyEnding"
+        );
+
+    if(storyState.ending){
+
+        choices.innerHTML = "";
+
+        ending.style.display =
+            "block";
+
+        document.getElementById(
+            "storyEndingText"
+        ).textContent =
+            storyState.consequences ||
+            "Your choices brought this chapter of the story to its conclusion.";
+
+    }else{
+
+        ending.style.display =
+            "none";
+
+        (storyState.choices || [])
+            .forEach(choice => {
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.className =
+                    "storyChoice";
+
+                button.innerHTML =
+                    `<div class="storyChoiceId">
+                        ${escapeHtml(choice.id || "")}
+                    </div>
+                    <div class="storyChoiceText">
+                        ${escapeHtml(choice.text || "")}
+                    </div>
+                    <div class="storyChoicePreview">
+                        ${escapeHtml(choice.preview || "")}
+                    </div>`;
+
+                button.onclick =
+                    () => chooseStory(
+                        choice
+                    );
+
+                choices.appendChild(
+                    button
+                );
+
+            });
+
+    }
+
+    setTimeout(
+        () => {
+            document.getElementById(
+                "storyContent"
+            ).scrollTop = 0;
+        },
+        0
+    );
+
+}
+
+
+async function startNewStory(){
+
+    if(
+        storyState &&
+        storyState.history &&
+        storyState.history.length
+    ){
+
+        const confirmed =
+            confirm(
+                "Start a completely new story? Your current branch will be replaced."
+            );
+
+        if(!confirmed)
+            return;
+
+    }
+
+    storyState = {
+        story_id:
+            "story_" +
+            Date.now(),
+
+        title:
+            "Story Mode",
+
+        chapter:1,
+
+        scene:"",
+
+        choices:[],
+
+        consequences:"",
+
+        variables:{},
+
+        history:[],
+
+        ending:false
+    };
+
+    localStorage.setItem(
+        STORY_STORAGE_KEY,
+        JSON.stringify(storyState)
+    );
+
+    document.getElementById(
+        "storyScene"
+    ).textContent = "";
+
+    document.getElementById(
+        "storyChoices"
+    ).innerHTML = "";
+
+    document.getElementById(
+        "storyConsequences"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyEnding"
+    ).style.display = "none";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display = "block";
+
+    try{
+
+        const response =
+            await fetch(
+                "/story/start",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+                        worldCharacters:
+                            characters
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Story could not start."
+            );
+
+        }
+
+        storyState = {
+            story_id:
+                storyState.story_id,
+
+            title:
+                data.story.title,
+
+            chapter:
+                data.story.chapter,
+
+            scene:
+                data.story.scene,
+
+            choices:
+                data.story.choices || [],
+
+            consequences:"",
+
+            variables:
+                data.story.variables || {},
+
+            history:[],
+
+            ending:
+                Boolean(
+                    data.story.ending
+                )
+        };
+
+        saveStoryState();
+
+        renderStory();
+
+    }catch(error){
+
+        document.getElementById(
+            "storyLoading"
+        ).textContent =
+            "Story error: " +
+            error.message;
+
+        console.error(
+            "Story start error:",
+            error
+        );
+
+    }
+
+}
+
+
+async function chooseStory(choice){
+
+    if(
+        !storyState ||
+        storyState.ending
+    )
+        return;
+
+    const buttons =
+        document.querySelectorAll(
+            ".storyChoice"
+        );
+
+    buttons.forEach(
+        button => {
+            button.disabled = true;
+            button.style.opacity = ".5";
+        }
+    );
+
+    document.getElementById(
+        "storyLoading"
+    ).textContent =
+        "Your choice is changing what happens next...";
+
+    document.getElementById(
+        "storyLoading"
+    ).style.display =
+        "block";
+
+    try{
+
+        const response =
+            await fetch(
+                "/story/choose",
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:JSON.stringify({
+
+                        title:
+                            storyState.title,
+
+                        state:
+                            storyState,
+
+                        choice_id:
+                            choice.id,
+
+                        choice_text:
+                            choice.text,
+
+                        worldCharacters:
+                            characters
+
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if(!response.ok){
+
+            throw new Error(
+                data.error ||
+                "Story choice failed."
+            );
+
+        }
+
+        const record =
+            data.record || {};
+
+        if(!Array.isArray(
+            storyState.history
+        )){
+            storyState.history = [];
+        }
+
+        storyState.history.push({
+            chapter:
+                record.chapter,
+
+            choice_id:
+                record.choice_id,
+
+            choice_text:
+                record.choice_text,
+
+            consequences:
+                record.consequences
+        });
+
+        storyState.history =
+            storyState.history.slice(
+                -40
+            );
+
+        storyState.chapter =
+            data.story.chapter;
+
+        storyState.scene =
+            data.story.scene;
+
+        storyState.choices =
+            data.story.choices || [];
+
+        storyState.consequences =
+            data.story.consequences || "";
+
+        storyState.variables =
+            data.story.variables ||
+            storyState.variables;
+
+        storyState.ending =
+            Boolean(
+                data.story.ending
+            );
+
+        saveStoryState();
+
+        renderStory();
+
+    }catch(error){
+
+        document.getElementById(
+            "storyLoading"
+        ).textContent =
+            "Story error: " +
+            error.message;
+
+        buttons.forEach(
+            button => {
+                button.disabled = false;
+                button.style.opacity = "1";
+            }
+        );
+
+        console.error(
+            "Story choice error:",
+            error
+        );
+
+    }
+
+}
+
+
+function escapeHtml(value){
+
+    return String(value)
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
+}
+
+
+</script>
+
+</body>
+</html>
