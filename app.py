@@ -3,20 +3,24 @@ import json
 import random
 import re
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
+
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 
+
 app = Flask(__name__)
+
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
 
-API_KEY = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+API_KEY = (
+    os.getenv("OPENROUTER_API_KEY")
+    or os.getenv("OPENAI_API_KEY")
+)
 
-# The app tries these from top to bottom.
-# OPENROUTER_MODEL can override the first model.
 DEFAULT_MODELS = [
     "openai/gpt-oss-20b:free",
     "meta-llama/llama-3.3-8b-instruct:free",
@@ -28,10 +32,13 @@ configured_model = os.getenv("OPENROUTER_MODEL")
 
 if configured_model:
     MODELS = [configured_model] + [
-        m for m in DEFAULT_MODELS if m != configured_model
+        model
+        for model in DEFAULT_MODELS
+        if model != configured_model
     ]
 else:
     MODELS = DEFAULT_MODELS
+
 
 if API_KEY:
     client = OpenAI(
@@ -40,6 +47,7 @@ if API_KEY:
     )
 else:
     client = None
+
 
 DATA_FILE = "school_world_data.json"
 data_lock = threading.Lock()
@@ -54,43 +62,96 @@ DEFAULT_CHARACTERS = [
         "id": "alex",
         "name": "Alex",
         "role": "Student",
-        "personality": "Friendly, curious, funny, energetic, and sometimes impulsive.",
-        "description": "Alex likes meeting people and turning boring situations into something interesting.",
-        "traits": ["Friendly", "Curious", "Funny", "Impulsive"],
+        "personality": (
+            "Friendly, curious, funny, energetic, "
+            "and sometimes impulsive."
+        ),
+        "description": (
+            "Alex likes meeting people and turning "
+            "boring situations into something interesting."
+        ),
+        "traits": [
+            "Friendly",
+            "Curious",
+            "Funny",
+            "Impulsive"
+        ],
         "memory": [],
-        "conversation": []
+        "conversation": [],
+        "location": "Hallway",
+        "status": "Hanging around the hallway."
     },
     {
         "id": "maya",
         "name": "Maya",
         "role": "Student",
-        "personality": "Intelligent, calm, observant, sarcastic, and independent.",
-        "description": "Maya notices details other people miss and thinks before she speaks.",
-        "traits": ["Smart", "Calm", "Observant", "Sarcastic"],
+        "personality": (
+            "Intelligent, calm, observant, sarcastic, "
+            "and independent."
+        ),
+        "description": (
+            "Maya notices details other people miss "
+            "and thinks before she speaks."
+        ),
+        "traits": [
+            "Smart",
+            "Calm",
+            "Observant",
+            "Sarcastic"
+        ],
         "memory": [],
-        "conversation": []
+        "conversation": [],
+        "location": "Library",
+        "status": "Reading in the library."
     },
     {
         "id": "jordan",
         "name": "Jordan",
         "role": "Student",
-        "personality": "Confident, competitive, outgoing, playful, and occasionally stubborn.",
-        "description": "Jordan loves competition and enjoys challenging people.",
-        "traits": ["Confident", "Competitive", "Outgoing", "Stubborn"],
+        "personality": (
+            "Confident, competitive, outgoing, playful, "
+            "and occasionally stubborn."
+        ),
+        "description": (
+            "Jordan loves competition and enjoys "
+            "challenging people."
+        ),
+        "traits": [
+            "Confident",
+            "Competitive",
+            "Outgoing",
+            "Stubborn"
+        ],
         "memory": [],
-        "conversation": []
+        "conversation": [],
+        "location": "Gym",
+        "status": "Practicing in the gym."
     },
     {
         "id": "sam",
         "name": "Sam",
         "role": "Student",
-        "personality": "Quiet, creative, thoughtful, kind, and slightly mysterious.",
-        "description": "Sam spends a lot of time drawing, reading, and observing the school.",
-        "traits": ["Creative", "Quiet", "Kind", "Thoughtful"],
+        "personality": (
+            "Quiet, creative, thoughtful, kind, "
+            "and slightly mysterious."
+        ),
+        "description": (
+            "Sam spends a lot of time drawing, "
+            "reading, and observing the school."
+        ),
+        "traits": [
+            "Creative",
+            "Quiet",
+            "Kind",
+            "Thoughtful"
+        ],
         "memory": [],
-        "conversation": []
+        "conversation": [],
+        "location": "Courtyard",
+        "status": "Drawing in the courtyard."
     }
 ]
+
 
 DEFAULT_LOCATIONS = [
     "Classroom",
@@ -106,70 +167,145 @@ DEFAULT_LOCATIONS = [
 
 
 # ============================================================
-# MULTIVERSE
+# HELPERS
+# ============================================================
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def clean_text(text):
+    if text is None:
+        return ""
+
+    text = str(text)
+    text = text.replace("\x00", "")
+
+    text = re.sub(
+        r"```(?:json|python|html)?",
+        "",
+        text,
+        flags=re.I
+    )
+
+    text = text.replace("```", "")
+
+    return text.strip()
+
+
+def trim_memory(items, limit=40):
+    if len(items) <= limit:
+        return items
+
+    return items[-limit:]
+
+
+def copy_defaults():
+    return json.loads(
+        json.dumps(DEFAULT_CHARACTERS)
+    )
+
+
+# ============================================================
+# UNIVERSE CREATION
 # ============================================================
 
 def create_universe(number, name=None):
     if name is None:
         name = f"Earth {number}"
 
+    characters = copy_defaults()
+
     return {
         "id": f"earth_{number}",
         "number": number,
         "name": name,
-        "description": "An alternate version of the school world.",
-        "characters": json.loads(json.dumps(DEFAULT_CHARACTERS)),
+        "description": (
+            "An alternate version of the school world."
+        ),
+
+        "characters": characters,
+
         "locations": list(DEFAULT_LOCATIONS),
+
         "player_location": "Classroom",
+
         "world_memory": [],
+
         "background_events": [],
-        "discovered": number == 1,
-        "visited": number == 1,
+
+        "events": [],
+
         "hints": [],
+
         "connections": [],
+
+        "discovered": number == 1,
+
+        "visited": number == 1,
+
         "story": {
             "active": False,
-            "story_id": random.randint(100000, 999999),
+            "story_id": random.randint(
+                100000,
+                999999
+            ),
             "title": "",
             "theme": "",
             "current_node": "start",
             "history": [],
-            "seen_nodes": ["start"],
+            "seen_nodes": [],
             "ending": None,
             "tree": {}
         },
+
         "improvement": {
             "facts": [],
             "preferences": [],
             "successful_patterns": [],
             "relationship_notes": []
-        },
-        "events": []
+        }
     }
 
 
 def default_data():
-    earth = create_universe(1, "Earth 1")
+    earth = create_universe(
+        1,
+        "Earth 1"
+    )
 
     return {
-        "world_id": random.randint(100000, 999999),
+        "world_id": random.randint(
+            100000,
+            999999
+        ),
+
         "world_number": 1,
 
-        # Current universe
         "current_universe": "earth_1",
 
-        # Every universe stays saved here.
         "universes": {
             "earth_1": earth
         },
 
-        # Multiverse-wide discoveries.
         "multiverse": {
-            "id": random.randint(100000, 999999),
-            "discovered_universes": ["earth_1"],
-            "visited_universes": ["earth_1"],
+            "id": random.randint(
+                100000,
+                999999
+            ),
+
+            "discovered_universes": [
+                "earth_1"
+            ],
+
+            "visited_universes": [
+                "earth_1"
+            ],
+
             "events": [],
+
             "global_hints": [],
+
             "portal_history": []
         }
     }
@@ -186,15 +322,156 @@ def save_data(current_data=None):
     with data_lock:
         temp_file = DATA_FILE + ".tmp"
 
-        with open(temp_file, "w", encoding="utf-8") as f:
+        with open(
+            temp_file,
+            "w",
+            encoding="utf-8"
+        ) as file:
             json.dump(
                 current_data,
-                f,
+                file,
                 indent=2,
                 ensure_ascii=False
             )
 
-        os.replace(temp_file, DATA_FILE)
+        os.replace(
+            temp_file,
+            DATA_FILE
+        )
+
+
+def repair_character(character):
+    character.setdefault(
+        "memory",
+        []
+    )
+
+    character.setdefault(
+        "conversation",
+        []
+    )
+
+    character.setdefault(
+        "traits",
+        []
+    )
+
+    character.setdefault(
+        "role",
+        "Student"
+    )
+
+    character.setdefault(
+        "personality",
+        "Friendly and interesting."
+    )
+
+    character.setdefault(
+        "description",
+        ""
+    )
+
+    character.setdefault(
+        "location",
+        "Classroom"
+    )
+
+    character.setdefault(
+        "status",
+        "Going about their day."
+    )
+
+    return character
+
+
+def repair_universe(universe):
+    universe.setdefault(
+        "description",
+        "An alternate version of the school world."
+    )
+
+    universe.setdefault(
+        "characters",
+        copy_defaults()
+    )
+
+    universe.setdefault(
+        "locations",
+        list(DEFAULT_LOCATIONS)
+    )
+
+    universe.setdefault(
+        "player_location",
+        "Classroom"
+    )
+
+    universe.setdefault(
+        "world_memory",
+        []
+    )
+
+    universe.setdefault(
+        "background_events",
+        []
+    )
+
+    universe.setdefault(
+        "events",
+        []
+    )
+
+    universe.setdefault(
+        "hints",
+        []
+    )
+
+    universe.setdefault(
+        "connections",
+        []
+    )
+
+    universe.setdefault(
+        "discovered",
+        True
+    )
+
+    universe.setdefault(
+        "visited",
+        False
+    )
+
+    universe.setdefault(
+        "story",
+        {
+            "active": False,
+            "story_id": random.randint(
+                100000,
+                999999
+            ),
+            "title": "",
+            "theme": "",
+            "current_node": "start",
+            "history": [],
+            "seen_nodes": [],
+            "ending": None,
+            "tree": {}
+        }
+    )
+
+    universe.setdefault(
+        "improvement",
+        {
+            "facts": [],
+            "preferences": [],
+            "successful_patterns": [],
+            "relationship_notes": []
+        }
+    )
+
+    for character in universe["characters"]:
+        repair_character(character)
+
+    return universe
 
 
 def load_data():
@@ -204,10 +481,17 @@ def load_data():
         return new_data
 
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
+        with open(
+            DATA_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+            loaded = json.load(file)
 
-        # Upgrade old data files.
+        # ----------------------------------------------------
+        # Upgrade old single-world format.
+        # ----------------------------------------------------
+
         if "universes" not in loaded:
             old = loaded
 
@@ -234,13 +518,18 @@ def load_data():
                 "player_location",
                 "world_memory",
                 "background_events",
+                "events",
+                "hints",
+                "connections",
                 "story",
                 "improvement"
             ]:
                 if key in old:
                     earth[key] = old[key]
 
-            upgraded["universes"]["earth_1"] = earth
+            upgraded["universes"][
+                "earth_1"
+            ] = earth
 
             loaded = upgraded
 
@@ -263,20 +552,36 @@ def load_data():
         loaded.setdefault(
             "multiverse",
             {
-                "id": random.randint(100000, 999999),
-                "discovered_universes": ["earth_1"],
-                "visited_universes": ["earth_1"],
+                "id": random.randint(
+                    100000,
+                    999999
+                ),
+                "discovered_universes": [
+                    "earth_1"
+                ],
+                "visited_universes": [
+                    "earth_1"
+                ],
                 "events": [],
                 "global_hints": [],
                 "portal_history": []
             }
         )
 
+        for universe in loaded["universes"].values():
+            repair_universe(universe)
+
         return loaded
 
-    except Exception:
+    except Exception as error:
+        print(
+            "Data load failed:",
+            error
+        )
+
         new_data = default_data()
         save_data(new_data)
+
         return new_data
 
 
@@ -284,7 +589,7 @@ data = load_data()
 
 
 # ============================================================
-# CURRENT UNIVERSE HELPERS
+# CURRENT UNIVERSE
 # ============================================================
 
 def current_universe():
@@ -297,34 +602,11 @@ def current_universe():
         universe_id = "earth_1"
         data["current_universe"] = universe_id
 
-    return data["universes"][universe_id]
+    universe = data["universes"][universe_id]
 
+    repair_universe(universe)
 
-def clean_text(text):
-    if text is None:
-        return ""
-
-    text = str(text)
-
-    text = text.replace("\x00", "")
-
-    text = re.sub(
-        r"```(?:json|python|html)?",
-        "",
-        text,
-        flags=re.I
-    )
-
-    text = text.replace("```", "")
-
-    return text.strip()
-
-
-def trim_memory(items, limit=40):
-    if len(items) <= limit:
-        return items
-
-    return items[-limit:]
+    return universe
 
 
 def find_character(character_id):
@@ -343,12 +625,16 @@ def remember(character, text):
     if not text:
         return
 
-    character.setdefault("memory", [])
+    character.setdefault(
+        "memory",
+        []
+    )
+
     character["memory"].append(text)
 
     character["memory"] = trim_memory(
         character["memory"],
-        40
+        50
     )
 
 
@@ -365,11 +651,13 @@ def add_world_memory(text):
         []
     )
 
-    universe["world_memory"].append(text)
+    universe["world_memory"].append(
+        text
+    )
 
     universe["world_memory"] = trim_memory(
         universe["world_memory"],
-        60
+        80
     )
 
 
@@ -401,15 +689,23 @@ def add_improvement(text):
 
 
 # ============================================================
-# AI MODEL FALLBACK
+# AI
 # ============================================================
 
-def call_ai(system_prompt, messages=None, temperature=0.8, max_tokens=700):
+def call_ai(
+    system_prompt,
+    messages=None,
+    temperature=0.8,
+    max_tokens=700
+):
     if messages is None:
         messages = []
 
     if not client:
-        return "AI_ERROR: OPENROUTER_API_KEY is not configured."
+        return (
+            "AI_ERROR: OPENROUTER_API_KEY "
+            "is not configured."
+        )
 
     errors = []
 
@@ -427,48 +723,42 @@ def call_ai(system_prompt, messages=None, temperature=0.8, max_tokens=700):
                 max_tokens=max_tokens
             )
 
-            result = response.choices[0].message.content
+            result = response.choices[
+                0
+            ].message.content
 
             if result:
                 return clean_text(result)
 
-        except Exception as e:
-            error = str(e)
+        except Exception as error:
             errors.append(
-                f"{model}: {error}"
+                f"{model}: {str(error)}"
             )
 
-            # Try the next model automatically.
             continue
 
-    return "AI_ERROR: All configured models failed. " + " | ".join(errors)
+    return (
+        "AI_ERROR: All configured models failed. "
+        + " | ".join(errors)
+    )
 
 
 def safe_json_from_ai(text):
     text = clean_text(text)
 
-    text = re.sub(
-        r"```json",
-        "",
-        text,
-        flags=re.I
-    )
-
-    text = text.replace(
-        "```",
-        ""
-    ).strip()
-
     try:
         return json.loads(text)
-
     except Exception:
         pass
 
     start = text.find("{")
     end = text.rfind("}")
 
-    if start != -1 and end != -1 and end > start:
+    if (
+        start != -1
+        and end != -1
+        and end > start
+    ):
         try:
             return json.loads(
                 text[start:end + 1]
@@ -485,11 +775,13 @@ def safe_json_from_ai(text):
 
 @app.route("/", methods=["GET", "HEAD"])
 def home():
-    return render_template("index.html")
+    return render_template(
+        "index.html"
+    )
 
 
 # ============================================================
-# WORLD INFORMATION
+# WORLD
 # ============================================================
 
 @app.route("/world", methods=["GET"])
@@ -506,12 +798,14 @@ def get_world():
 
 
 # ============================================================
-# CHARACTER CHAT
+# CHAT
 # ============================================================
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     character_id = body.get(
         "character_id"
@@ -523,7 +817,10 @@ def chat():
 
     if not character_id or not message:
         return jsonify({
-            "error": "character_id and message are required"
+            "error": (
+                "character_id and message "
+                "are required."
+            )
         }), 400
 
     character = find_character(
@@ -532,7 +829,7 @@ def chat():
 
     if not character:
         return jsonify({
-            "error": "Character not found"
+            "error": "Character not found."
         }), 404
 
     universe = current_universe()
@@ -545,7 +842,7 @@ def chat():
     recent = character.get(
         "conversation",
         []
-    )[-18:]
+    )[-20:]
 
     messages = []
 
@@ -564,14 +861,23 @@ def chat():
         {
             "name": c["name"],
             "role": c["role"],
-            "personality": c["personality"]
+            "personality": c["personality"],
+            "location": c.get(
+                "location",
+                "Unknown"
+            ),
+            "status": c.get(
+                "status",
+                ""
+            )
         }
         for c in universe["characters"]
         if c["id"] != character["id"]
     ]
 
     system_prompt = f"""
-You are {character["name"]}, a person inside a living school simulation.
+You are {character["name"]}, a real person inside a
+living school simulation.
 
 UNIVERSE:
 {universe["name"]}
@@ -591,38 +897,46 @@ DESCRIPTION:
 TRAITS:
 {", ".join(character.get("traits", []))}
 
-CURRENT LOCATION:
+YOUR CURRENT LOCATION:
+{character.get("location", "Unknown")}
+
+YOUR CURRENT STATUS:
+{character.get("status", "")}
+
+PLAYER LOCATION:
 {universe["player_location"]}
 
 CHARACTER MEMORY:
-{json.dumps(character.get("memory", [])[-25:], ensure_ascii=False)}
+{json.dumps(character.get("memory", [])[-30:], ensure_ascii=False)}
 
 WORLD MEMORY:
-{json.dumps(universe.get("world_memory", [])[-25:], ensure_ascii=False)}
+{json.dumps(universe.get("world_memory", [])[-30:], ensure_ascii=False)}
 
 OTHER CHARACTERS:
 {json.dumps(other_characters, ensure_ascii=False)}
 
-RULES:
+IMPORTANT RULES:
 
 1. Stay completely in character.
 2. Remember important previous conversations.
-3. Give medium-length natural responses.
-4. Usually use several sentences or 2-5 short paragraphs.
-5. Do not make every answer enormous.
-6. Do not constantly agree with the player.
-7. Have opinions and emotions appropriate to your personality.
-8. Never control the player's actions.
-9. If the player says they are traveling somewhere, acknowledge it naturally.
-10. Do not automatically pretend to travel with the player.
-11. You know the school and its locations.
-12. You may talk about other students naturally.
-13. You may disagree, joke, become curious, become suspicious,
-    become excited, or become annoyed depending on your personality.
-14. Do not describe yourself as an AI or chatbot.
-15. This is {universe["name"]}, so remember that alternate universes can exist.
-16. Do not randomly reveal multiverse information unless it makes sense.
-17. Do not turn every conversation into a multiverse conversation.
+3. Give natural medium-length responses.
+4. Do not constantly agree with the player.
+5. Have your own opinions and emotions.
+6. Never control the player's actions.
+7. Do not automatically follow the player.
+8. Characters have their own locations and lives.
+9. If the player travels somewhere, do not pretend you
+   traveled with them unless the story specifically says so.
+10. You know the school and its locations.
+11. You may talk about other students.
+12. You may disagree, joke, gossip, become curious,
+    annoyed, excited, suspicious, or surprised.
+13. Do not describe yourself as an AI or chatbot.
+14. This is {universe["name"]}.
+15. Alternate universes exist, but do not constantly
+    bring them up.
+16. React naturally to recent world events when relevant.
+17. Do not make every conversation dramatic.
 """
 
     answer = call_ai(
@@ -632,7 +946,9 @@ RULES:
         max_tokens=650
     )
 
-    if answer.startswith("AI_ERROR:"):
+    if answer.startswith(
+        "AI_ERROR:"
+    ):
         return jsonify({
             "error": answer
         }), 500
@@ -645,23 +961,24 @@ RULES:
     character["conversation"].append({
         "role": "user",
         "content": message,
-        "time": datetime.utcnow().isoformat()
+        "time": now_iso()
     })
 
     character["conversation"].append({
         "role": "assistant",
         "content": answer,
-        "time": datetime.utcnow().isoformat()
+        "time": now_iso()
     })
 
     character["conversation"] = trim_memory(
         character["conversation"],
-        70
+        80
     )
 
     if len(message) > 20:
         add_improvement(
-            f"Player communication pattern: {message[:180]}"
+            "Player communication pattern: "
+            + message[:180]
         )
 
     save_data()
@@ -675,12 +992,17 @@ RULES:
 
 
 # ============================================================
-# RESET CHARACTER CONVERSATION
+# RESET CONVERSATION
 # ============================================================
 
-@app.route("/conversation/reset", methods=["POST"])
+@app.route(
+    "/conversation/reset",
+    methods=["POST"]
+)
 def reset_conversation():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     character_id = body.get(
         "character_id"
@@ -692,7 +1014,7 @@ def reset_conversation():
 
     if not character:
         return jsonify({
-            "error": "Character not found"
+            "error": "Character not found."
         }), 404
 
     character["conversation"] = []
@@ -701,15 +1023,20 @@ def reset_conversation():
 
     return jsonify({
         "success": True,
-        "message": f"Conversation with {character['name']} was reset."
+        "message": (
+            f"Conversation with "
+            f"{character['name']} was reset."
+        )
     })
 
 
-@app.route("/conversation/new", methods=["POST"])
+@app.route(
+    "/conversation/new",
+    methods=["POST"]
+)
 def new_text():
     return jsonify({
-        "success": True,
-        "message": "New conversation started."
+        "success": True
     })
 
 
@@ -717,9 +1044,14 @@ def new_text():
 # CREATE CHARACTER
 # ============================================================
 
-@app.route("/characters/create", methods=["POST"])
+@app.route(
+    "/characters/create",
+    methods=["POST"]
+)
 def create_character():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     name = clean_text(
         body.get("name")
@@ -749,10 +1081,16 @@ def create_character():
 
     if not personality:
         return jsonify({
-            "error": "Character personality is required."
+            "error": (
+                "Character personality "
+                "is required."
+            )
         }), 400
 
-    if not isinstance(traits, list):
+    if not isinstance(
+        traits,
+        list
+    ):
         traits = []
 
     character_id = (
@@ -762,7 +1100,12 @@ def create_character():
             name.lower()
         ).strip("-")
         + "-"
-        + str(random.randint(1000, 9999))
+        + str(
+            random.randint(
+                1000,
+                9999
+            )
+        )
     )
 
     character = {
@@ -770,14 +1113,24 @@ def create_character():
         "name": name,
         "role": role,
         "personality": personality,
-        "description": description or f"{name} is a {role.lower()} at the school.",
+        "description": (
+            description
+            or f"{name} is a {role.lower()}."
+        ),
         "traits": [
             clean_text(x)
             for x in traits
             if clean_text(x)
         ],
         "memory": [],
-        "conversation": []
+        "conversation": [],
+        "location": random.choice(
+            DEFAULT_LOCATIONS
+        ),
+        "status": (
+            "Getting settled into "
+            "the school."
+        )
     }
 
     universe = current_universe()
@@ -795,12 +1148,17 @@ def create_character():
 
 
 # ============================================================
-# TRAVEL
+# TRAVEL INSIDE SCHOOL
 # ============================================================
 
-@app.route("/world/travel", methods=["POST"])
+@app.route(
+    "/world/travel",
+    methods=["POST"]
+)
 def travel():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     location = clean_text(
         body.get("location")
@@ -813,12 +1171,17 @@ def travel():
             "error": "Unknown location."
         }), 400
 
-    old_location = universe["player_location"]
+    old_location = universe[
+        "player_location"
+    ]
 
-    universe["player_location"] = location
+    universe[
+        "player_location"
+    ] = location
 
     add_world_memory(
-        f"Player traveled from {old_location} to {location}."
+        f"Player traveled from "
+        f"{old_location} to {location}."
     )
 
     save_data()
@@ -830,17 +1193,14 @@ def travel():
 
 
 # ============================================================
-# BACKGROUND CHARACTER INTERACTIONS
+# BACKGROUND WORLD ACTIVITY
 # ============================================================
 
-@app.route("/world/advance", methods=["POST"])
-def world_advance():
+def generate_background_event():
     universe = current_universe()
 
     if len(universe["characters"]) < 2:
-        return jsonify({
-            "event": "There are not enough characters."
-        })
+        return None
 
     first, second = random.sample(
         universe["characters"],
@@ -852,97 +1212,245 @@ def world_advance():
     )
 
     system_prompt = f"""
-Generate a background interaction between two school characters.
+Generate a natural background school interaction.
 
 UNIVERSE:
 {universe["name"]}
 
 CHARACTER A:
-{first["name"]}
-{first["personality"]}
+Name: {first["name"]}
+Personality: {first["personality"]}
+Current location: {first.get("location", "Unknown")}
 
 CHARACTER B:
-{second["name"]}
-{second["personality"]}
+Name: {second["name"]}
+Personality: {second["personality"]}
+Current location: {second.get("location", "Unknown")}
 
-LOCATION:
+LOCATION OF EVENT:
 {location}
 
-Create a natural event.
+Generate something that could naturally happen
+during a normal school day.
 
-It can involve:
+Possible events:
 - joking
 - studying
 - gossip
 - disagreement
 - helping
 - competition
-- an ordinary school moment
+- awkward moment
+- lunch
+- class
+- club activity
 - discovering something
-- discussing another student
+- talking about another student
+- ordinary school behavior
 
 Do not make every event dramatic.
 
-Keep it 3-7 sentences.
+Return ONLY JSON:
 
-Do not control the player.
+{{
+    "summary": "short event description",
+    "reaction_a": "how character A feels",
+    "reaction_b": "how character B feels"
+}}
 """
 
-    event = call_ai(
+    response = call_ai(
         system_prompt,
         [],
-        temperature=0.9,
-        max_tokens=350
+        temperature=0.95,
+        max_tokens=400
     )
 
-    if event.startswith("AI_ERROR:"):
-        return jsonify({
-            "error": event
-        }), 500
+    parsed = safe_json_from_ai(
+        response
+    )
 
-    background = {
+    if not parsed:
+        parsed = {
+            "summary": (
+                f"{first['name']} and "
+                f"{second['name']} had a "
+                f"normal conversation."
+            ),
+            "reaction_a": "They seem fine.",
+            "reaction_b": "They seem fine."
+        }
+
+    event = {
+        "id": random.randint(
+            100000,
+            999999
+        ),
+        "type": "background",
         "characters": [
             first["name"],
             second["name"]
         ],
+        "character_ids": [
+            first["id"],
+            second["id"]
+        ],
         "location": location,
-        "event": event,
-        "time": datetime.utcnow().isoformat()
+        "event": clean_text(
+            parsed.get(
+                "summary",
+                ""
+            )
+        ),
+        "time": now_iso()
     }
 
     universe["background_events"].append(
-        background
+        event
     )
 
     universe["background_events"] = trim_memory(
         universe["background_events"],
-        50
+        60
     )
 
     remember(
         first,
-        f"{second['name']} and I interacted at {location}: {event[:180]}"
+        (
+            f"{second['name']} and I "
+            f"interacted at {location}: "
+            f"{event['event']}"
+        )
     )
 
     remember(
         second,
-        f"I interacted with {first['name']} at {location}: {event[:180]}"
+        (
+            f"I interacted with "
+            f"{first['name']} at {location}: "
+            f"{event['event']}"
+        )
     )
 
     add_world_memory(
-        f"{first['name']} and {second['name']} interacted at {location}."
+        f"{first['name']} and "
+        f"{second['name']} interacted "
+        f"at {location}."
     )
+
+    save_data()
+
+    return event
+
+
+@app.route(
+    "/world/advance",
+    methods=["POST"]
+)
+def world_advance():
+    event = generate_background_event()
+
+    if not event:
+        return jsonify({
+            "error": (
+                "There are not enough "
+                "characters."
+            )
+        }), 400
+
+    return jsonify({
+        "success": True,
+        "event": event
+    })
+
+
+# ============================================================
+# CHARACTER REACTION TO WORLD EVENT
+# ============================================================
+
+@app.route(
+    "/world/react",
+    methods=["POST"]
+)
+def world_react():
+    body = request.get_json(
+        silent=True
+    ) or {}
+
+    event_text = clean_text(
+        body.get("event")
+    )
+
+    if not event_text:
+        return jsonify({
+            "error": "Event is required."
+        }), 400
+
+    universe = current_universe()
+
+    reactions = []
+
+    for character in universe["characters"]:
+        system_prompt = f"""
+You are {character["name"]}.
+
+Personality:
+{character["personality"]}
+
+Traits:
+{", ".join(character.get("traits", []))}
+
+Location:
+{character.get("location", "Unknown")}
+
+A school event just happened:
+
+{event_text}
+
+Give a short natural reaction from this character.
+
+Do not control the player.
+
+Return ONLY the character's reaction.
+"""
+
+        reaction = call_ai(
+            system_prompt,
+            [],
+            temperature=0.9,
+            max_tokens=180
+        )
+
+        if reaction.startswith(
+            "AI_ERROR:"
+        ):
+            continue
+
+        remember(
+            character,
+            (
+                f"I experienced this "
+                f"world event: {event_text}. "
+                f"My reaction: {reaction}"
+            )
+        )
+
+        reactions.append({
+            "character_id": character["id"],
+            "name": character["name"],
+            "reaction": reaction
+        })
 
     save_data()
 
     return jsonify({
         "success": True,
-        "event": background
+        "reactions": reactions
     })
 
 
 # ============================================================
-# MULTIVERSE EVENT GENERATOR
+# MULTIVERSE EVENT
 # ============================================================
 
 MULTIVERSE_EVENT_TYPES = [
@@ -950,10 +1458,10 @@ MULTIVERSE_EVENT_TYPES = [
     "A character receives a message from someone who should not exist.",
     "A classroom object suddenly changes into a different version.",
     "A hallway briefly looks different before returning to normal.",
-    "A student remembers an event that never happened in this universe.",
+    "A student remembers an event that never happened.",
     "A mysterious symbol appears somewhere in the school.",
     "A portal-like distortion appears for a few seconds.",
-    "A familiar student behaves as though they came from another Earth.",
+    "A familiar student behaves as if they came from another Earth.",
     "Two versions of the same object appear at once.",
     "A strange sound seems to come from another universe."
 ]
@@ -966,13 +1474,13 @@ def generate_multiversal_event():
         MULTIVERSE_EVENT_TYPES
     )
 
-    discovered = data["multiverse"].get(
+    known = data["multiverse"].get(
         "discovered_universes",
         ["earth_1"]
     )
 
     prompt = f"""
-Generate a multiversal event for a school simulation.
+Generate a mysterious multiverse event.
 
 CURRENT UNIVERSE:
 {universe["name"]}
@@ -984,38 +1492,24 @@ EVENT TYPE:
 {event_type}
 
 KNOWN UNIVERSES:
-{discovered}
+{known}
 
-CURRENT CHARACTERS:
-{json.dumps([
-    {
-        "name": c["name"],
-        "personality": c["personality"]
-    }
-    for c in universe["characters"]
-], ensure_ascii=False)}
+The event should feel mysterious.
 
-The event should feel mysterious and interesting.
-
-Do NOT immediately explain everything.
-
-The event should include:
-1. What happens.
-2. What the player can observe.
-3. A possible clue or hint about another universe.
-4. Whether a portal/route is currently accessible.
+Do not explain everything immediately.
 
 Return ONLY JSON:
 
 {{
     "title": "event title",
-    "description": "event description",
-    "hint": "clue toward another universe",
+    "description": "what happens",
+    "hint": "a clue about another universe",
     "portal_available": false,
     "target_universe": null
 }}
 
-If a portal is available, target_universe should be an integer.
+If a portal is available, target_universe must be
+an integer.
 """
 
     result = call_ai(
@@ -1033,7 +1527,10 @@ If a portal is available, target_universe should be an integer.
         parsed = {
             "title": "A Strange Distortion",
             "description": event_type,
-            "hint": "Something about this world feels slightly different.",
+            "hint": (
+                "Something about this world "
+                "feels different."
+            ),
             "portal_available": False,
             "target_universe": None
         }
@@ -1043,7 +1540,9 @@ If a portal is available, target_universe should be an integer.
             100000,
             999999
         ),
+        "type": "multiverse",
         "universe": universe["name"],
+        "universe_id": universe["id"],
         "location": universe["player_location"],
         "title": clean_text(
             parsed.get(
@@ -1072,7 +1571,7 @@ If a portal is available, target_universe should be an integer.
         "target_universe": parsed.get(
             "target_universe"
         ),
-        "time": datetime.utcnow().isoformat()
+        "time": now_iso()
     }
 
     universe["events"].append(
@@ -1081,7 +1580,7 @@ If a portal is available, target_universe should be an integer.
 
     universe["events"] = trim_memory(
         universe["events"],
-        50
+        60
     )
 
     if event["hint"]:
@@ -1091,18 +1590,23 @@ If a portal is available, target_universe should be an integer.
 
         universe["hints"] = trim_memory(
             universe["hints"],
-            30
+            40
         )
 
-        data["multiverse"]["global_hints"].append(
-            {
-                "universe": universe["name"],
-                "hint": event["hint"]
-            }
-        )
+        data["multiverse"][
+            "global_hints"
+        ].append({
+            "universe": universe["name"],
+            "hint": event["hint"],
+            "time": now_iso()
+        })
 
-        data["multiverse"]["global_hints"] = trim_memory(
-            data["multiverse"]["global_hints"],
+        data["multiverse"][
+            "global_hints"
+        ] = trim_memory(
+            data["multiverse"][
+                "global_hints"
+            ],
             100
         )
 
@@ -1112,7 +1616,7 @@ If a portal is available, target_universe should be an integer.
 
     data["multiverse"]["events"] = trim_memory(
         data["multiverse"]["events"],
-        100
+        120
     )
 
     save_data()
@@ -1120,7 +1624,10 @@ If a portal is available, target_universe should be an integer.
     return event
 
 
-@app.route("/multiverse/event", methods=["POST"])
+@app.route(
+    "/multiverse/event",
+    methods=["POST"]
+)
 def multiverse_event():
     event = generate_multiversal_event()
 
@@ -1131,20 +1638,25 @@ def multiverse_event():
 
 
 # ============================================================
-# CREATE NEW UNIVERSE
+# CREATE UNIVERSE
 # ============================================================
 
-@app.route("/multiverse/create", methods=["POST"])
+@app.route(
+    "/multiverse/create",
+    methods=["POST"]
+)
 def create_universe_route():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     requested_number = body.get(
         "number"
     )
 
     existing_numbers = [
-        u["number"]
-        for u in data["universes"].values()
+        universe["number"]
+        for universe in data["universes"].values()
     ]
 
     if requested_number:
@@ -1156,18 +1668,27 @@ def create_universe_route():
             requested_number = None
 
     if not requested_number:
-        requested_number = max(
-            existing_numbers,
-            default=0
-        ) + 1
+        requested_number = (
+            max(
+                existing_numbers,
+                default=0
+            ) + 1
+        )
 
-    universe_id = f"earth_{requested_number}"
+    if requested_number < 1:
+        requested_number = 1
+
+    universe_id = (
+        f"earth_{requested_number}"
+    )
 
     if universe_id in data["universes"]:
         return jsonify({
             "success": True,
-            "universe": data["universes"][universe_id],
-            "already_exists": True
+            "already_exists": True,
+            "universe": data["universes"][
+                universe_id
+            ]
         })
 
     universe = create_universe(
@@ -1175,27 +1696,40 @@ def create_universe_route():
         f"Earth {requested_number}"
     )
 
-    # Make alternate universes actually different.
     universe["description"] = random.choice([
         "A world where the school developed differently.",
         "A world where different students became friends.",
         "A world where the school has a strange history.",
         "A world where ordinary events often become unusual.",
-        "A world that seems almost identical to Earth 1, except for small details.",
+        "A world almost identical to Earth 1 except for small details.",
         "A world where one major event changed the school's future."
     ])
 
-    # Randomize some character details without destroying their personalities.
+    # Give the new universe small differences.
+    random.shuffle(
+        universe["characters"]
+    )
+
     for character in universe["characters"]:
         character["memory"] = []
         character["conversation"] = []
+        character["location"] = random.choice(
+            universe["locations"]
+        )
 
     universe["discovered"] = True
+    universe["visited"] = False
 
-    data["universes"][universe_id] = universe
+    data["universes"][
+        universe_id
+    ] = universe
 
-    if universe_id not in data["multiverse"]["discovered_universes"]:
-        data["multiverse"]["discovered_universes"].append(
+    if universe_id not in data["multiverse"][
+        "discovered_universes"
+    ]:
+        data["multiverse"][
+            "discovered_universes"
+        ].append(
             universe_id
         )
 
@@ -1208,10 +1742,13 @@ def create_universe_route():
 
 
 # ============================================================
-# UNIVERSE LIST / MAP
+# MULTIVERSE MAP
 # ============================================================
 
-@app.route("/multiverse", methods=["GET"])
+@app.route(
+    "/multiverse",
+    methods=["GET"]
+)
 def get_multiverse():
     universes = []
 
@@ -1232,6 +1769,16 @@ def get_multiverse():
                 "visited",
                 False
             ),
+            "player_location": universe.get(
+                "player_location",
+                "Classroom"
+            ),
+            "character_count": len(
+                universe.get(
+                    "characters",
+                    []
+                )
+            ),
             "hints": universe.get(
                 "hints",
                 []
@@ -1243,15 +1790,23 @@ def get_multiverse():
         })
 
     universes.sort(
-        key=lambda x: x["number"]
+        key=lambda item: item["number"]
     )
 
     return jsonify({
-        "current_universe": data["current_universe"],
+        "current_universe": data[
+            "current_universe"
+        ],
         "universes": universes,
-        "events": data["multiverse"]["events"][-30:],
-        "global_hints": data["multiverse"]["global_hints"][-50:],
-        "portal_history": data["multiverse"]["portal_history"][-30:]
+        "events": data["multiverse"][
+            "events"
+        ][-30:],
+        "global_hints": data["multiverse"][
+            "global_hints"
+        ][-50:],
+        "portal_history": data["multiverse"][
+            "portal_history"
+        ][-30:]
     })
 
 
@@ -1259,9 +1814,14 @@ def get_multiverse():
 # TRAVEL BETWEEN UNIVERSES
 # ============================================================
 
-@app.route("/multiverse/travel", methods=["POST"])
+@app.route(
+    "/multiverse/travel",
+    methods=["POST"]
+)
 def travel_universe():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     target = clean_text(
         body.get("universe")
@@ -1269,46 +1829,67 @@ def travel_universe():
 
     if target not in data["universes"]:
         return jsonify({
-            "error": "That universe has not been discovered."
+            "error": (
+                "That universe has "
+                "not been discovered."
+            )
         }), 404
 
-    target_universe = data["universes"][target]
+    target_universe = data[
+        "universes"
+    ][target]
 
     if not target_universe.get(
         "discovered",
         False
     ):
         return jsonify({
-            "error": "That universe has not been discovered yet."
+            "error": (
+                "That universe has "
+                "not been discovered yet."
+            )
         }), 403
 
-    old = data["current_universe"]
+    old = data[
+        "current_universe"
+    ]
 
     if old == target:
         return jsonify({
             "success": True,
-            "message": "You are already in that universe.",
+            "message": (
+                "You are already in "
+                "that universe."
+            ),
             "universe": target_universe
         })
 
-    data["current_universe"] = target
+    old_universe = data[
+        "universes"
+    ].get(old)
+
+    data[
+        "current_universe"
+    ] = target
 
     target_universe["visited"] = True
 
-    if target not in data["multiverse"]["visited_universes"]:
-        data["multiverse"]["visited_universes"].append(
+    if target not in data[
+        "multiverse"
+    ]["visited_universes"]:
+        data[
+            "multiverse"
+        ]["visited_universes"].append(
             target
         )
 
-    data["multiverse"]["portal_history"].append({
+    data[
+        "multiverse"
+    ]["portal_history"].append({
         "from": old,
         "to": target,
-        "time": datetime.utcnow().isoformat()
+        "time": now_iso()
     })
-
-    old_universe = data["universes"].get(
-        old
-    )
 
     if old_universe:
         connection = {
@@ -1316,10 +1897,33 @@ def travel_universe():
             "to": target
         }
 
-        if connection not in old_universe["connections"]:
-            old_universe["connections"].append(
+        if connection not in old_universe[
+            "connections"
+        ]:
+            old_universe[
+                "connections"
+            ].append(
                 connection
             )
+
+    connection_back = {
+        "from": target,
+        "to": old
+    }
+
+    if connection_back not in target_universe[
+        "connections"
+    ]:
+        target_universe[
+            "connections"
+        ].append(
+            connection_back
+        )
+
+    add_world_memory(
+        f"Player arrived from another universe: "
+        f"{target_universe['name']}."
+    )
 
     save_data()
 
@@ -1332,7 +1936,7 @@ def travel_universe():
 
 
 # ============================================================
-# STORY MODE
+# STORY GENERATION
 # ============================================================
 
 STORY_THEMES = [
@@ -1341,7 +1945,7 @@ STORY_THEMES = [
     "A friendship begins to fall apart.",
     "A hidden secret about the school is discovered.",
     "A competition becomes much more serious than expected.",
-    "An ordinary day slowly turns into something nobody expected.",
+    "An ordinary day slowly becomes unexpected.",
     "A strange object is discovered inside the school.",
     "A school event goes completely wrong.",
     "A rumor spreads through the school.",
@@ -1383,26 +1987,26 @@ Requirements:
 - 5 major endings minimum.
 - 15-24 meaningful story nodes.
 - Choices must actually change future events.
-- Choices affect relationships, trust, information,
-  locations, opportunities, and future decisions.
-- Some branches should remain separate.
-- Some choices should lock or unlock later choices.
+- Choices affect relationships, information,
+  locations, opportunities, and decisions.
+- Some branches remain separate.
+- Some choices lock or unlock later choices.
 - Exactly four choices at every non-ending node.
 - Choices are A, B, C, D.
-- Include ordinary school moments between major events.
-- Characters must behave according to personality.
-- The story must feel like one continuous story.
-- Every new story should be different.
-- The player should not know the correct ending.
-- Do not copy any existing copyrighted game plot.
+- Include ordinary school moments.
+- Characters behave according to personality.
+- The story feels continuous.
+- Every story is different.
+- Do not reveal the correct ending.
+- Do not copy copyrighted game plots.
 
 Return ONLY valid JSON.
 
-Use this structure:
+Structure:
 
 {{
   "title": "story title",
-  "theme": "theme",
+  "theme": "story theme",
   "start": "start",
   "nodes": {{
     "start": {{
@@ -1426,8 +2030,6 @@ Use this structure:
 }}
 
 Every next value must point to a real node or ending.
-
-Make the story complete.
 """
 
     response = call_ai(
@@ -1455,7 +2057,14 @@ Make the story complete.
     return parsed
 
 
-@app.route("/story/start", methods=["POST"])
+# ============================================================
+# STORY START
+# ============================================================
+
+@app.route(
+    "/story/start",
+    methods=["POST"]
+)
 def story_start():
     story = generate_story()
 
@@ -1463,11 +2072,17 @@ def story_start():
         return jsonify({
             "error": (
                 "Story generation failed. "
-                "Check your API key, credits, and available models."
+                "Check your API key, credits, "
+                "and available models."
             )
         }), 500
 
     universe = current_universe()
+
+    start_id = story.get(
+        "start",
+        "start"
+    )
 
     data_story = {
         "active": True,
@@ -1483,16 +2098,10 @@ def story_start():
             "theme",
             ""
         ),
-        "current_node": story.get(
-            "start",
-            "start"
-        ),
+        "current_node": start_id,
         "history": [],
         "seen_nodes": [
-            story.get(
-                "start",
-                "start"
-            )
+            start_id
         ],
         "ending": None,
         "tree": story
@@ -1501,7 +2110,8 @@ def story_start():
     universe["story"] = data_story
 
     add_world_memory(
-        f"Story started: {data_story['title']}"
+        "Story started: "
+        + data_story["title"]
     )
 
     save_data()
@@ -1512,27 +2122,42 @@ def story_start():
     })
 
 
-@app.route("/story/choose", methods=["POST"])
+# ============================================================
+# STORY CHOICE
+# ============================================================
+
+@app.route(
+    "/story/choose",
+    methods=["POST"]
+)
 def story_choose():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     choice_id = clean_text(
         body.get("choice")
-    )
+    ).upper()
 
     universe = current_universe()
     story_state = universe["story"]
 
-    if not story_state["active"]:
+    if not story_state.get(
+        "active",
+        False
+    ):
         return jsonify({
             "error": "No active story."
         }), 400
 
-    story = story_state["tree"]
+    story = story_state.get(
+        "tree",
+        {}
+    )
 
-    current_id = story_state[
+    current_id = story_state.get(
         "current_node"
-    ]
+    )
 
     node = story.get(
         "nodes",
@@ -1574,7 +2199,8 @@ def story_choose():
             "text",
             ""
         ),
-        "next": next_id
+        "next": next_id,
+        "time": now_iso()
     })
 
     story_state[
@@ -1603,11 +2229,20 @@ def story_choose():
             break
 
     if ending:
-        story_state["ending"] = ending
-        story_state["active"] = False
+        story_state[
+            "ending"
+        ] = ending
+
+        story_state[
+            "active"
+        ] = False
 
         add_world_memory(
-            f"Story ended: {ending.get('title', 'Unknown ending')}"
+            "Story ended: "
+            + ending.get(
+                "title",
+                "Unknown ending"
+            )
         )
 
     save_data()
@@ -1620,36 +2255,151 @@ def story_choose():
     })
 
 
-@app.route("/story/tree", methods=["GET"])
-def story_tree():
+# ============================================================
+# STORY REPLAY
+# ============================================================
+
+@app.route(
+    "/story/replay",
+    methods=["POST"]
+)
+def story_replay():
     universe = current_universe()
 
-    story = universe["story"]
+    old_story = universe.get(
+        "story",
+        {}
+    )
+
+    tree = old_story.get(
+        "tree"
+    )
+
+    if not tree:
+        return jsonify({
+            "error": (
+                "There is no story "
+                "to replay."
+            )
+        }), 400
+
+    start_id = tree.get(
+        "start",
+        "start"
+    )
+
+    universe["story"] = {
+        "active": True,
+        "story_id": random.randint(
+            100000,
+            999999
+        ),
+        "title": old_story.get(
+            "title",
+            tree.get(
+                "title",
+                "Story Mode"
+            )
+        ),
+        "theme": old_story.get(
+            "theme",
+            tree.get(
+                "theme",
+                ""
+            )
+        ),
+        "current_node": start_id,
+        "history": [],
+        "seen_nodes": [
+            start_id
+        ],
+        "ending": None,
+        "tree": tree
+    }
+
+    save_data()
 
     return jsonify({
-        "title": story["title"],
-        "tree": story["tree"],
-        "seen_nodes": story["seen_nodes"],
-        "history": story["history"],
-        "ending": story["ending"],
-        "active": story["active"]
+        "success": True,
+        "story": universe["story"]
     })
 
 
 # ============================================================
-# SELF IMPROVEMENT
+# STORY TREE
 # ============================================================
 
-@app.route("/improvement", methods=["GET"])
+@app.route(
+    "/story/tree",
+    methods=["GET"]
+)
+def story_tree():
+    universe = current_universe()
+
+    story = universe.get(
+        "story",
+        {}
+    )
+
+    return jsonify({
+        "title": story.get(
+            "title",
+            ""
+        ),
+        "theme": story.get(
+            "theme",
+            ""
+        ),
+        "current_node": story.get(
+            "current_node",
+            "start"
+        ),
+        "tree": story.get(
+            "tree",
+            {}
+        ),
+        "seen_nodes": story.get(
+            "seen_nodes",
+            []
+        ),
+        "history": story.get(
+            "history",
+            []
+        ),
+        "ending": story.get(
+            "ending"
+        ),
+        "active": story.get(
+            "active",
+            False
+        )
+    })
+
+
+# ============================================================
+# IMPROVEMENT
+# ============================================================
+
+@app.route(
+    "/improvement",
+    methods=["GET"]
+)
 def get_improvement():
     return jsonify(
-        current_universe()["improvement"]
+        current_universe()[
+            "improvement"
+        ]
     )
 
 
-@app.route("/improvement/learn", methods=["POST"])
+@app.route(
+    "/improvement/learn",
+    methods=["POST"]
+)
 def improvement_learn():
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(
+        silent=True
+    ) or {}
 
     lesson = clean_text(
         body.get("lesson")
@@ -1668,7 +2418,9 @@ def improvement_learn():
 
     return jsonify({
         "success": True,
-        "improvement": current_universe()["improvement"]
+        "improvement": current_universe()[
+            "improvement"
+        ]
     })
 
 
@@ -1676,7 +2428,10 @@ def improvement_learn():
 # WORLD RESET
 # ============================================================
 
-@app.route("/world/reset", methods=["POST"])
+@app.route(
+    "/world/reset",
+    methods=["POST"]
+)
 def reset_world():
     global data
 
@@ -1707,31 +2462,41 @@ def reset_world():
 
     return jsonify({
         "success": True,
-        "world_number": data["world_number"],
-        "world_id": data["world_id"],
+        "world_number": data[
+            "world_number"
+        ],
+        "world_id": data[
+            "world_id"
+        ],
         "message": (
-            "A completely new multiverse was created. "
-            "Previous memories, stories, characters, "
-            "and universe discoveries were reset."
+            "A completely new multiverse "
+            "was created."
         )
     })
 
 
 # ============================================================
-# HEALTH CHECK
+# HEALTH
 # ============================================================
 
-@app.route("/health", methods=["GET"])
+@app.route(
+    "/health",
+    methods=["GET"]
+)
 def health():
     return jsonify({
         "status": "ok",
         "ai_configured": bool(API_KEY),
         "models": MODELS,
-        "current_universe": data["current_universe"],
+        "current_universe": data[
+            "current_universe"
+        ],
         "universe_count": len(
             data["universes"]
         ),
-        "world": data["world_number"]
+        "world": data[
+            "world_number"
+        ]
     })
 
 
